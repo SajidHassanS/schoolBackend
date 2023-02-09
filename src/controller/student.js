@@ -4,15 +4,14 @@ const catchAsync = require("../utils/catchAsync");
 const { autoIncrement } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
-const TableName = "";
-const incrementalId = "id"; // id is auto incremented
+const TableName = "User";
+const incrementalId = "studentId"; // id is auto incremented
 
 /* ************************************************************************************** */
 /*                              fetch student list and cards                              */
 /* ************************************************************************************** */
 const fetchStudentListAndCard = async (
   tableDataCondition,
-  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -20,11 +19,9 @@ const fetchStudentListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $match: cardsCondition }, { $count: "total" }],
+        total: [{ $count: "total" }],
 
         cards: [
-          // Condition For Cards
-          { $match: cardsCondition },
           {
             $group: {
               _id: null,
@@ -33,7 +30,7 @@ const fetchStudentListAndCard = async (
                   $cond: [{ $eq: ["$status", "active"] }, 1, 0],
                 },
               },
-              totalClose: {
+              totalBlock: {
                 $sum: {
                   $cond: [{ $eq: ["$status", "block"] }, 1, 0],
                 },
@@ -50,7 +47,19 @@ const fetchStudentListAndCard = async (
           { $match: tableDataCondition },
 
           {
-            $project: {},
+            $project: {
+              _id: 1,
+              fullName: 1,
+              email: 1,
+              phoneNumber: 1,
+              address: 1,
+              birthday: 1,
+              gender: 1,
+              role: 1,
+              status: 1,
+              emergencyContact: 1,
+              personalInformation: 1,
+            },
           },
           {
             $sort: { _id: -1 },
@@ -72,7 +81,6 @@ const getStudentRecord = catchAsync(async (req, res) => {
   // const data = req.body;
   const user = req.user;
   let tableDataCondition = {};
-  let cardsCondition = {};
 
   // Variables For Pagination
   let limit = parseInt(data.limit);
@@ -82,13 +90,13 @@ const getStudentRecord = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  // Search with Quiz Title
+  // Search with fullName and studentId
   if (data.name) {
     tableDataCondition = {
       $expr: {
         $regexMatch: {
           input: {
-            $concat: ["$", { $toString: "$" }],
+            $concat: ["$fullName", { $toString: "$studentId" }],
           },
           regex: `.*${data.name}.*`,
           options: "i",
@@ -104,7 +112,6 @@ const getStudentRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchStudentListAndCard(
     tableDataCondition,
-    cardsCondition,
     paginationCondition
   );
 
@@ -133,28 +140,84 @@ const getStudentRecord = catchAsync(async (req, res) => {
 });
 
 /* ************************************************************************************** */
-/*                               edit Student record                                      */
+/*                              add student record                                       */
+/* ************************************************************************************** */
+const addStudentRecord = catchAsync(async (req, res) => {
+  const data = res.body;
+  const user = req.user;
+  const userId = user._id;
+
+  const isAlreadyExist = await generalService.getRecord("User", {
+    email: data.email,
+  });
+  if (isAlreadyExist && isAlreadyExist.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Email already exists",
+    });
+  } else {
+    createdBy = userId;
+    data.role = "student";
+    data[incrementalId] = await autoIncrement(TableName, incrementalId);
+    data.emergencyContact = {
+      // information about the emergency contact details
+
+      emergencyContactName: "",
+      emergencyContactNumber: "",
+      emergencyContactRelationship: "",
+    };
+
+    data.personalInformation = {
+      // personal information about student
+
+      nationality: "",
+      religion: "",
+      martialStatus: "",
+    };
+
+    data.deductionInformation = {
+      // deduction information about student
+    };
+
+    const Record = await generalService.addRecord(TableName, data);
+    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    res.send({
+      status: constant.SUCCESS,
+      message: "Student added successfully",
+      Record: RecordAll[0],
+    });
+  }
+});
+
+/* ************************************************************************************** */
+/*                               edit student record                                      */
 /* ************************************************************************************** */
 const updateStudentRecord = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
-  let condition = {};
-
-  const Record = await generalService.findAndModifyRecord(
-    TableName,
-    { _id: data._id },
-    data
-  );
-  const RecordAll = await fetchStudentListAndCard(
-    { _id: Record._id },
-    condition,
-    {}
-  );
-  res.send({
-    status: constant.SUCCESS,
-    message: "Student record updated successfully",
-    Record: RecordAll[0],
+  const userId = user._id;
+  data.updatedAt = userId;
+  const isAlreadyExist = await generalService.getRecord("User", {
+    email: data.email,
   });
+  if (isAlreadyExist && isAlreadyExist.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Email already exists",
+    });
+  } else {
+    const Record = await generalService.findAndModifyRecord(
+      TableName,
+      { _id: data._id },
+      data
+    );
+    const RecordAll = await fetchStudentListAndCard({ _id: Record._id }, {});
+    res.send({
+      status: constant.SUCCESS,
+      message: "Student record updated successfully",
+      Record: RecordAll[0],
+    });
+  }
 });
 
 /* ************************************************************************************** */
@@ -165,10 +228,10 @@ const deleteStudentRecord = catchAsync(async (req, res) => {
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
-  const RecordAll = await fetchStudentListAndCard({}, {}, {});
+  const RecordAll = await fetchStudentListAndCard({}, {});
   res.send({
     status: constant.SUCCESS,
-    message: "Quiz deleted successfully",
+    message: "Student deleted successfully",
     Record: {
       deletedRecordId: { _id: data._id },
       cards: RecordAll[0].cards,
@@ -177,6 +240,7 @@ const deleteStudentRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
+  addStudentRecord,
   getStudentRecord,
   updateStudentRecord,
   deleteStudentRecord,
