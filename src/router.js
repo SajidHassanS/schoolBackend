@@ -28,7 +28,7 @@ router.delete("/deleteUser", userController.deleteRecord);
 
 //===================  Section Route      ============//
  router.get("/getSection",authenticate,sectionController.getSection);
-router.get("/addSection/:sectionName",sectionController.addSection);
+router.post("/addSection",sectionController.addSection);
 router.put("/editSection",authJoiSection.editSection,authenticate,sectionController.editSection);
 router.delete("/deleteSection",authJoiSection.deleteSection,authenticate,sectionController.deleteSection);
 
