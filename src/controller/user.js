@@ -19,7 +19,6 @@ const userDetail = [
   "role",
   "status",
   "createdAt",
-  
   "profileImageUrl",
   "alarmSetting",
   "token",

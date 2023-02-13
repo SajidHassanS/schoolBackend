@@ -3,6 +3,7 @@ const router = new Router();
 const { authenticate } = require("./middleware/authenticate");
 
 // ===================      All Controllers   ==================//
+const dashboardController = require("./controller/dashboard");
 const authController = require("./controller/auth");
 const userController = require("./controller/user");
 const branchController = require("./controller/branch");
@@ -10,6 +11,8 @@ const classController = require("./controller/class");
 const staffController = require("./controller/staff");
 const studentController = require("./controller/student");
 const teacherController = require("./controller/teacher");
+const taxRateController = require("./controller/texRate");
+const noticeboardController = require("./controller/noticeBoard");
 
 // ===================      joi validations    ==================//
 const authJoiValidation = require("./utils/validation/authJoiValidation");
@@ -20,10 +23,6 @@ const teacherJoi = require("./utils/validation/class");
 const staffJoi = require("./utils/validation/class");
 
 const sectionController = require("./controller/section");
-
-// ===================      joi validations    ==================//
-const authJoiValidation = require("./utils/validation/authJoiValidation");
-const authJoiSection = require("./utils/validation/section");
 //===================       Auth Route       ==============//
 router.post("/signUp", authJoiValidation.signUp, authController.signUp);
 router.post("/login", authController.signIn);
@@ -39,6 +38,13 @@ router.get("/getUserInfo/:query", authenticate, userController.getUserDetail);
 router.put("/editUser", authenticate, userController.editRecord);
 router.put("/resetPassword", authenticate, userController.resetPassword);
 router.delete("/deleteUser", userController.deleteRecord);
+
+//===================      dashboard Route         ==============//
+router.get(
+  "/getSuperAdminDashboard/:query",
+  authenticate,
+  dashboardController.getSuperAdminDashboard
+);
 
 //===================      branch Route         ==============//
 router.get(
@@ -163,4 +169,49 @@ router.put(
   staffController.deleteStaffRecord
 );
 
+//===================      tax Rate Route         ==============//
+
+router.get(
+  "/getTaxRateRecord/:query",
+  authenticate,
+  taxRateController.getTaxRateRecord
+);
+router.post(
+  "/addTaxRateRecord",
+  authenticate,
+  taxRateController.addTaxRateRecord
+);
+router.put(
+  "/updateTaxRateRecord",
+  authenticate,
+  taxRateController.updateTaxRateRecord
+);
+router.put(
+  "/deleteTaxRateRecord",
+  authenticate,
+  taxRateController.deleteTaxRateRecord
+);
+
+//===================      noticeboard  route         ==============//
+
+router.get(
+  "/getNoticeboardRecord/:query",
+  authenticate,
+  noticeboardController.getNoticeboardRecord
+);
+router.post(
+  "/addNoticeboardRecord",
+  authenticate,
+  noticeboardController.addNoticeboardRecord
+);
+router.put(
+  "/editNoticeboardRecord",
+  authenticate,
+  noticeboardController.editNoticeboardRecord
+);
+router.put(
+  "/deleteNoticeboardRecord",
+  authenticate,
+  noticeboardController.deleteNoticeboardRecord
+);
 module.exports = router;

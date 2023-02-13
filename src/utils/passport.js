@@ -7,6 +7,20 @@ passport.serializeUser((user, done) => {
   done(null, user._id);
 });
 
+function generateUSPhone() {
+  // Declare a string variable
+  // which store all string
+  var string = "0123456789";
+  let OTP = "";
+
+  // Find the length of string
+  var len = string.length;
+  for (let i = 0; i < 10; i++) {
+    OTP += string[Math.floor(Math.random() * len)];
+  }
+  return "+" + OTP;
+}
+
 passport.deserializeUser((id, done) => {
   User.findById(id, (err, user) => {
     done(err, user);
@@ -30,6 +44,7 @@ passport.use(
 
       user.comparePassword(password, async (err, isMatch) => {
         if (err) {
+          console.log(err);
           return done(err);
         }
         if (isMatch) {

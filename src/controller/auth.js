@@ -7,11 +7,8 @@ const constant = require("../utils/constant"),
 const guid = require("guid");
 const { sendEmail } = require("../utils/emailSender");
 const emailTemplate = require("../utils/emailTemplates");
-const { autoIncrement } = require("../utils/commonFunctions");
-
 const saltRounds = 10;
 const TableName = "User";
-const incrementalId = "userId";
 
 let userFieldSendFrontEnd = [
   "_id",
@@ -24,7 +21,6 @@ let userFieldSendFrontEnd = [
   "profileImageUrl",
 ];
 
-// ======================       SignIn     =========================//
 const signIn = catchAsync(async (req, res, next) => {
   const data = req.body;
   passport.authenticate("local", {}, (err, user, info) => {
@@ -44,7 +40,20 @@ const signIn = catchAsync(async (req, res, next) => {
         return;
       }
 
-      if (user.status === "active" && user.isDeleted === false) {
+      console.log("====== role =====", user.role, process.env.SUPER_ADMIN_URL);
+
+      // if (
+      //   user.role === "superAdmin" &&
+      //   req.headers.origin !== process.env.SUPER_ADMIN_URL
+      // ) {
+      //   res.status(400).send({
+      //     status: constant.ERROR,
+      //     message: "Incorrect username or password",
+      //   });
+      //   return;
+      // }
+
+      if (user.status === "active") {
         let token = await user.generateAuthToken();
         let data = _.pick(user, userFieldSendFrontEnd);
         data.token = token;
@@ -67,12 +76,10 @@ const signIn = catchAsync(async (req, res, next) => {
   })(req, res, next);
 });
 
-// ======================       SignUp     ========================//
 const signUp = catchAsync(async (req, res) => {
   const data = req.body;
   let user = null;
   data.status = "active";
-  data[incrementalId] = await autoIncrement(TableName, incrementalId);
   if (data._id) {
     const password = await bcrypt.hash(data.password, saltRounds);
     data.password = password;
@@ -97,24 +104,16 @@ const signUp = catchAsync(async (req, res) => {
       "token",
       "fullName",
       "role",
-      "profileImageUrl",
       "phoneNumber",
     ]),
   });
 });
 
-// ======================       Get login user profile     ========================//
 const getProfile = catchAsync(async (req, res) => {
-  // const user = req.user;
-  const userId = "6317151a7b7e2f6a0b2a8340";
+  const user = req.user;
+
   let aggregateArr = [
-    {
-      $match: {
-        $expr: {
-          $eq: ["$_id", { $toObjectId: userId }],
-        },
-      },
-    },
+    { $match: { _id: user._id } },
     {
       $project: {
         fullName: 1,
@@ -126,6 +125,9 @@ const getProfile = catchAsync(async (req, res) => {
     },
   ];
   let Record = await generalService.getRecordAggregate(TableName, aggregateArr);
+  // if (Record[0].profileImageUrl[0].imageUrl) {
+  //   Record[0].profileImageUrl = Record[0].profileImageUrl[0].imageUrl;
+  // }
   console.log("========", res.get("x-auth"));
   res.send({
     status: constant.SUCCESS,
@@ -134,9 +136,22 @@ const getProfile = catchAsync(async (req, res) => {
   });
 });
 
+const getSetting = catchAsync(async (req, res) => {
+  const user = req.user;
+
+  let aggregateArr = [{ $match: { createdBy: user._id } }];
+  let Record = await generalService.getRecordAggregate("Setting", aggregateArr);
+
+  res.send({
+    status: constant.SUCCESS,
+    message: "Record updated successfully",
+    Record: Record[0],
+  });
+});
 const getUserDetail = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   let condition = { invitationGuid: data.token };
+
   let Record = await generalService.getRecord(TableName, condition).then((r) =>
     r[0] === undefined
       ? Promise.reject({
@@ -156,8 +171,6 @@ const getUserDetail = catchAsync(async (req, res) => {
       Record: _.pick(Record[0], ["fullName", "email", "phoneNumber", "_id"]),
     });
 });
-
-// ======================       update profile    ========================//
 const updateProfile = catchAsync(async (req, res, next) => {
   const data = req.body;
   const user = req.user;
@@ -176,7 +189,10 @@ const updateProfile = catchAsync(async (req, res, next) => {
         address: 1,
         phoneNumber: 1,
         password: 1,
+        biography: 1,
         profileImageUrl: 1,
+        membership: { $arrayElemAt: ["$packageDetail.packageName", 0] },
+        type: { $arrayElemAt: ["$packageDetail.packageType", 0] },
       },
     },
   ];
@@ -191,7 +207,6 @@ const updateProfile = catchAsync(async (req, res, next) => {
   });
 });
 
-// ======================       change password    ========================//
 const changePassword = catchAsync(async (req, res) => {
   const user = req.user;
   let obj = req.body;
@@ -238,15 +253,14 @@ const changePassword = catchAsync(async (req, res) => {
     });
 });
 
-// ======================       forget password    ========================//
 const forgetPassword = catchAsync(async (req, res) => {
   const email = req.body.email.toLowerCase();
   const authToken = guid.create().value;
-
+  let url = "";
   const Record = await generalService.getRecord(TableName, {
     email: email,
   });
-  if (Record && Record.length > 0) {
+  if (Record.length > 0) {
     if (Record[0].status === "active") {
       await generalService.findAndModifyRecord(
         TableName,
@@ -257,33 +271,48 @@ const forgetPassword = catchAsync(async (req, res) => {
           forgetPasswordAuthToken: authToken,
         }
       );
-      let url = process.env.ADMIN_URL + "/setNewPassword/" + authToken;
-      console.log("===== url  =====", url);
 
-      if (Record.role === "admin") {
-        url = process.env.SUPER_ADMIN_URL + "/setNewPassword/" + authToken;
+      if (Record[0].role === "admin") {
+        url = process.env.Admin_FrontEnd_URL + "/setNewPassword/" + authToken;
+      } else if (Record[0].role === "instructor") {
+        url = process.env.INSTRUCTOR_URL + "/setNewPassword/" + authToken;
+      } else if (Record[0].role === "student") {
+        url = process.env.STUDENT_URL + "/setNewPassword/" + authToken;
       }
-
+      console.log("==========forget password url========", url);
       const subjectForgotPassword = `Reset Password Email for ${process.env.PROJECT_NAME}`;
       const sent = await sendEmail(
         email,
         subjectForgotPassword,
         emailTemplate.forgetPasswordEmail(url)
       );
-      res.send({
-        status: constant.SUCCESS,
-        message: "Email sent to your inbox",
+
+      if (sent) {
+        res.status(200).send({
+          status: constant.SUCCESS,
+          message: constant.FORGOT_EMAIL_SENT_SUCCESS,
+        });
+      } else {
+        res.status(500).send({
+          status: constant.ERROR,
+          message: constant.FORGOT_PASSWORD_EMAIL_ERROR,
+        });
+      }
+    } else {
+      res.status(500).send({
+        status: constant.ERROR,
+        message: constant.STATUS_BLOCK,
+        showAlert: true,
       });
     }
   } else {
-    res.send({
+    res.status(200).send({
       status: constant.ERROR,
-      message: "Email not found , enter a valid email address",
+      message: constant.NO_SUCH_EMAIL,
     });
   }
 });
 
-// ======================       set new password    ========================//
 const setNewPassword = catchAsync(async (req, res) => {
   const forgetPassAuthToken = req.body.forgetPasswordAuthToken;
   const password = req.body.password;
@@ -293,6 +322,7 @@ const setNewPassword = catchAsync(async (req, res) => {
   });
   if (Record && Record.length > 0) {
     const email = Record[0].email;
+
     await generalService.findAndModifyRecord(
       TableName,
       {
@@ -303,19 +333,28 @@ const setNewPassword = catchAsync(async (req, res) => {
         forgetPasswordAuthToken: "",
       }
     );
+
     const sent = await sendEmail(
       email,
       `Password Changed Successfully for ${process.env.PROJECT_NAME}`,
       emailTemplate.setNewPasswordSuccessfully()
     );
-    res.send({
-      status: constant.SUCCESS,
-      message: "Password updated successfully ",
-    });
+
+    if (!sent) {
+      res.status(500).send({
+        status: constant.ERROR,
+        message: constant.PASSWORD_RESET_ERROR,
+      });
+    } else {
+      res.status(200).send({
+        status: constant.SUCCESS,
+        message: constant.NEW_PASSWORD_SET_SUCCESS,
+      });
+    }
   } else {
-    res.send({
-      status: constant.ERROR,
-      message: "Something went wrong, try again later",
+    res.status(500).send({
+      status: constant.SUCCESS,
+      message: constant.REQUEST_EXPIRED,
     });
   }
 });
@@ -329,4 +368,5 @@ module.exports = {
   forgetPassword,
   setNewPassword,
   changePassword,
+  getSetting,
 };

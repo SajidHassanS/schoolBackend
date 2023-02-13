@@ -45,7 +45,9 @@ const User = new mongoose.Schema(
     phoneNumber: {
       type: String,
     },
-
+    password: {
+      type: String,
+    },
     code: {
       type: Number,
     },
