@@ -272,13 +272,10 @@ const forgetPassword = catchAsync(async (req, res) => {
         }
       );
 
-      if (Record[0].role === "admin") {
-        url = process.env.Admin_FrontEnd_URL + "/setNewPassword/" + authToken;
-      } else if (Record[0].role === "instructor") {
-        url = process.env.INSTRUCTOR_URL + "/setNewPassword/" + authToken;
-      } else if (Record[0].role === "student") {
-        url = process.env.STUDENT_URL + "/setNewPassword/" + authToken;
+      if (Record[0].role === "superAdmin") {
+        url = process.env.SUPER_ADMIN_URL + "/setNewPassword/" + authToken;
       }
+
       console.log("==========forget password url========", url);
       const subjectForgotPassword = `Reset Password Email for ${process.env.PROJECT_NAME}`;
       const sent = await sendEmail(
@@ -287,15 +284,11 @@ const forgetPassword = catchAsync(async (req, res) => {
         emailTemplate.forgetPasswordEmail(url)
       );
 
+      console.log("====send", sent);
       if (sent) {
         res.status(200).send({
           status: constant.SUCCESS,
           message: constant.FORGOT_EMAIL_SENT_SUCCESS,
-        });
-      } else {
-        res.status(500).send({
-          status: constant.ERROR,
-          message: constant.FORGOT_PASSWORD_EMAIL_ERROR,
         });
       }
     } else {
