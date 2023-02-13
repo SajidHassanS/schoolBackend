@@ -19,6 +19,11 @@ const studentJoi = require("./utils/validation/class");
 const teacherJoi = require("./utils/validation/class");
 const staffJoi = require("./utils/validation/class");
 
+const sectionController = require("./controller/section");
+
+// ===================      joi validations    ==================//
+const authJoiValidation = require("./utils/validation/authJoiValidation");
+const authJoiSection = require("./utils/validation/section");
 //===================       Auth Route       ==============//
 router.post("/signUp", authJoiValidation.signUp, authController.signUp);
 router.post("/login", authController.signIn);

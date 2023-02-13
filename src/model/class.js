@@ -1,4 +1,4 @@
-"use strict";
+"use strict"
 const mongoose = require("mongoose");
 var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const Class = new mongoose.Schema(
@@ -10,7 +10,7 @@ const Class = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
     },
-    sectionId: {
+    sectionId:{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Section",
     },
