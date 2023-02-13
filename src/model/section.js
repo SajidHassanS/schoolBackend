@@ -1,16 +1,12 @@
 "use strict"
 const mongoose = require("mongoose");
-var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
-const Class = new mongoose.Schema(
+
+const Section = new mongoose.Schema(
   {
-    branchId: {
+    sectionId: {
       type: Number,
     },
-    sectionId:{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Section",
-    },
-    className: {
+    sectionName:{
       type: String,
     },
     createdAt: {
@@ -27,5 +23,5 @@ const Class = new mongoose.Schema(
   }
 );
 
-Class.plugin(aggregatePaginate);
-mongoose.model("Class", Class);
+
+mongoose.model("Section", Section);

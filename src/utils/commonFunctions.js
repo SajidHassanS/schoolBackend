@@ -9,7 +9,7 @@ const autoIncrement = async (table, fieldName, condition = {}) => {
     ];
     const record = await generalService.getRecordAggregate(table, aggregateArr);
 
-    console.log("===== record =====", JSON.stringify(record));
+    //console.log("===== record =====", JSON.stringify(record));
     if (record.length >= 1) {
       let count = parseInt(record[0][fieldName]);
       count += 1;

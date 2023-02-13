@@ -5,10 +5,11 @@ const { authenticate } = require("./middleware/authenticate");
 // ===================      All Controllers   ==================//
 const authController = require("./controller/auth");
 const userController = require("./controller/user");
+const sectionController = require("./controller/section");
 
 // ===================      joi validations    ==================//
 const authJoiValidation = require("./utils/validation/authJoiValidation");
-
+const authJoiSection = require("./utils/validation/section");
 //===================       Auth Route       ==============//
 router.post("/signUp", authJoiValidation.signUp, authController.signUp);
 router.post("/login", authController.signIn);
@@ -24,5 +25,11 @@ router.get("/getUserInfo/:query", authenticate, userController.getUserDetail);
 router.put("/editUser", authenticate, userController.editRecord);
 router.put("/resetPassword", authenticate, userController.resetPassword);
 router.delete("/deleteUser", userController.deleteRecord);
+
+//===================  Section Route      ============//
+ router.get("/getSection",authenticate,sectionController.getSection);
+router.get("/addSection/:sectionName",sectionController.addSection);
+router.put("/editSection",authJoiSection.editSection,authenticate,sectionController.editSection);
+router.delete("/deleteSection",authJoiSection.deleteSection,authenticate,sectionController.deleteSection);
 
 module.exports = router;
