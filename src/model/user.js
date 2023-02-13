@@ -15,9 +15,29 @@ const User = new mongoose.Schema(
     userId: {
       type: Number,
     },
-
+    teacherId: {
+      type: Number,
+    },
+    studentId: {
+      type: Number,
+    },
+    staffId: {
+      type: Number,
+    },
     fullName: {
       type: String,
+    },
+    userName: {
+      type: String,
+    },
+    branchName: {
+      type: String,
+    },
+    designation: { 
+      type: String,
+    },
+    joiningDate: {
+      type: Date,
     },
     email: {
       type: String,
@@ -34,36 +54,55 @@ const User = new mongoose.Schema(
     phoneNumber: {
       type: String,
     },
-    countryCode: {
-      type: String,
+
+    code: {
+      type: Number,
     },
     status: {
       type: String,
       enum: ["active", "block", "delete"],
       default: "active",
     },
-
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-    password: {
+    gender: {
       type: String,
-      trim: true,
+      enum: ["male", "female", "other"],
+    },
+    birthday: {
+      type: Date,
+    },
+    admissionDate: {
+      type: Date,
+    },
+    emergencyContact: {
+      type: Object,
+    },
+    personalInformation: {
+      type: Object,
+    },
+    salaryInformation: {
+      type: Object,
+    },
+    deductionInformation: {
+      type: Object,
     },
 
     forgetPasswordAuthToken: {
       type: String,
     },
-
     address: {
       type: String,
       trim: true,
     },
-
     role: {
       type: String,
-      enum: ["superAdmin", "admin", "teacher", "student", "staff"],
+      enum: [
+        "superAdmin",
+        "principal",
+        "teacher",
+        "student",
+        "accountant",
+        "librarian",
+      ],
     },
     profileImageUrl: {
       type: String,
@@ -71,12 +110,13 @@ const User = new mongoose.Schema(
     token: {
       type: String,
     },
-
     createdAt: {
       type: Date,
       default: Date.now,
     },
-
+    updatedAt: {
+      type: Date,
+    },
     lastLogin: {
       type: Date,
     },

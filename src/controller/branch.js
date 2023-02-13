@@ -4,15 +4,14 @@ const catchAsync = require("../utils/catchAsync");
 const { autoIncrement } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
-const TableName = "";
-const incrementalId = "id"; // id is auto incremented
+const TableName = "User";
+const branchCode = "code"; // branch code is auto incremented
 
 /* ************************************************************************************** */
 /*                              fetch branch list and cards          g                    */
 /* ************************************************************************************** */
 const fetchBranchListAndCard = async (
   tableDataCondition,
-  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -20,11 +19,9 @@ const fetchBranchListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $match: cardsCondition }, { $count: "total" }],
+        total: [{ $count: "total" }],
 
         cards: [
-          // Condition For Cards
-          { $match: cardsCondition },
           {
             $group: {
               _id: null,
@@ -33,7 +30,7 @@ const fetchBranchListAndCard = async (
                   $cond: [{ $eq: ["$status", "active"] }, 1, 0],
                 },
               },
-              totalClose: {
+              totalBlock: {
                 $sum: {
                   $cond: [{ $eq: ["$status", "block"] }, 1, 0],
                 },
@@ -49,8 +46,18 @@ const fetchBranchListAndCard = async (
           // Condition For Table Data
           { $match: tableDataCondition },
 
+          // lookup to get teacher, student and staff strength (remaining)
+
           {
-            $project: {},
+            $project: {
+              _id: 1,
+              fullName: 1,
+              code: 1,
+              email: 1,
+              password: 1,
+              address: 1,
+              phoneNumber: 1,
+            },
           },
           {
             $sort: { _id: -1 },
@@ -72,7 +79,6 @@ const getBranchRecord = catchAsync(async (req, res) => {
   // const data = req.body;
   const user = req.user;
   let tableDataCondition = {};
-  let cardsCondition = {};
 
   // Variables For Pagination
   let limit = parseInt(data.limit);
@@ -82,13 +88,13 @@ const getBranchRecord = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  // Search with Quiz Title
+  // search with branch name and branch code
   if (data.name) {
     tableDataCondition = {
       $expr: {
         $regexMatch: {
           input: {
-            $concat: ["$", { $toString: "$" }],
+            $concat: ["$fullName", { $toString: "$code" }],
           },
           regex: `.*${data.name}.*`,
           options: "i",
@@ -104,7 +110,6 @@ const getBranchRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchBranchListAndCard(
     tableDataCondition,
-    cardsCondition,
     paginationCondition
   );
 
@@ -133,28 +138,63 @@ const getBranchRecord = catchAsync(async (req, res) => {
 });
 
 /* ************************************************************************************** */
+/*                              add branch record                                       */
+/* ************************************************************************************** */
+const addBranchRecord = catchAsync(async (req, res) => {
+  const data = res.body;
+  const user = req.user;
+  const userId = user._id;
+
+  const isAlreadyExist = await generalService.getRecord("User", {
+    email: data.email,
+  });
+  if (isAlreadyExist && isAlreadyExist.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Email already exists",
+    });
+  } else {
+    data.status = "principal";
+    createdBy = userId;
+    data[branchCode] = await autoIncrement(TableName, branchCode);
+    const Record = await generalService.addRecord(TableName, data);
+    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    res.send({
+      status: constant.SUCCESS,
+      message: "Branch added successfully",
+      Record: RecordAll[0],
+    });
+  }
+});
+
+/* ************************************************************************************** */
 /*                               edit branch record                                       */
 /* ************************************************************************************** */
 const updateBranchRecord = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
-  let condition = {};
-
-  const Record = await generalService.findAndModifyRecord(
-    TableName,
-    { _id: data._id },
-    data
-  );
-  const RecordAll = await fetchBranchListAndCard(
-    { _id: Record._id },
-    condition,
-    {}
-  );
-  res.send({
-    status: constant.SUCCESS,
-    message: "Branch record updated successfully",
-    Record: RecordAll[0],
+  const isAlreadyExist = await generalService.getRecord("User", {
+    email: data.email,
   });
+  if (isAlreadyExist && isAlreadyExist.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Email already exists",
+    });
+  } else {
+    data.updatedAt = Date.now();
+    const Record = await generalService.findAndModifyRecord(
+      TableName,
+      { _id: data._id },
+      data
+    );
+    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    res.send({
+      status: constant.SUCCESS,
+      message: "Branch record updated successfully",
+      Record: RecordAll[0],
+    });
+  }
 });
 
 /* ************************************************************************************** */
@@ -168,7 +208,7 @@ const deleteBranchRecord = catchAsync(async (req, res) => {
   const RecordAll = await fetchBranchListAndCard({}, {}, {});
   res.send({
     status: constant.SUCCESS,
-    message: "Quiz deleted successfully",
+    message: "Branch deleted successfully",
     Record: {
       deletedRecordId: { _id: data._id },
       cards: RecordAll[0].cards,
@@ -177,6 +217,7 @@ const deleteBranchRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
+  addBranchRecord,
   getBranchRecord,
   updateBranchRecord,
   deleteBranchRecord,

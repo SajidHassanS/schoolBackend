@@ -27,7 +27,8 @@ let userFieldSendFrontEnd = [
 // ======================       SignIn     =========================//
 const signIn = catchAsync(async (req, res, next) => {
   const data = req.body;
-  passport.authenticate("local", {}, (err, user, info) => {
+  console.log("=====",data);
+    passport.authenticate("local", {}, (err, user, info) => {
     if (err || !user) {
       res.status(400).send({
         status: constant.ERROR,
