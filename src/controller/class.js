@@ -12,6 +12,7 @@ const autoIncrementId = "sNo"; // id is auto incremented
 /* ************************************************************************************** */
 const fetchClassListAndCard = async (
   tableDataCondition,
+  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -19,10 +20,11 @@ const fetchClassListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $count: "total" }],
+        total: [{ $match: cardsCondition }, { $count: "total" }],
 
         // section cards details
         cards: [
+          { $match: cardsCondition },
           {
             $group: {
               _id: null,
@@ -119,7 +121,7 @@ const getClassRecord = catchAsync(async (req, res) => {
   // const data = req.body;
   const user = req.user;
   let tableDataCondition = {};
-
+  let cardsCondition = {};
   // Variables For Pagination
   let limit = parseInt(data.limit);
   let skipPage = limit * (parseInt(data.pageNumber) - 1);
@@ -150,6 +152,7 @@ const getClassRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchClassListAndCard(
     tableDataCondition,
+    cardsCondition,
     paginationCondition
   );
 
@@ -189,16 +192,22 @@ const addClassRecord = catchAsync(async (req, res) => {
   const isAlreadyExist = await generalService.getRecord("Class", {
     className: data.className,
   });
+
   if (isAlreadyExist && isAlreadyExist.length > 0) {
     res.send({
       status: constant.ERROR,
       message: "Class name already exists",
     });
-  } else {
+  }
+  // if teacher is added by super admin then assigning his id as branch id
+  else {
+    if (user.role === "superAdmin") {
+      data.branchId = userId;
+    }
     createdBy = userId;
     data[autoIncrementId] = await autoIncrement(TableName, autoIncrementId);
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {}, {});
     res.send({
       status: constant.SUCCESS,
       message: "Class added successfully",
@@ -228,7 +237,7 @@ const updateClassRecord = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
-    const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {}, {});
     res.send({
       status: constant.SUCCESS,
       message: "Class record updated successfully",

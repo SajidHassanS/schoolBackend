@@ -33,7 +33,7 @@ const User = new mongoose.Schema(
     branchName: {
       type: String,
     },
-    designation: { 
+    designation: {
       type: String,
     },
     joiningDate: {
@@ -121,6 +121,10 @@ const User = new mongoose.Schema(
     },
     lastLogin: {
       type: Date,
+    },
+    branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
     },
   },
   {

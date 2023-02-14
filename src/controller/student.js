@@ -12,6 +12,7 @@ const incrementalId = "studentId"; // id is auto incremented
 /* ************************************************************************************** */
 const fetchStudentListAndCard = async (
   tableDataCondition,
+  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -19,9 +20,10 @@ const fetchStudentListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $count: "total" }],
+        total: [{ $match: cardsCondition }, { $count: "total" }],
 
         cards: [
+          { $match: cardsCondition },
           {
             $group: {
               _id: null,
@@ -112,6 +114,7 @@ const getStudentRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchStudentListAndCard(
     tableDataCondition,
+    {},
     paginationCondition
   );
 
@@ -180,7 +183,7 @@ const addStudentRecord = catchAsync(async (req, res) => {
     };
 
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {}, {});
     res.send({
       status: constant.SUCCESS,
       message: "Student added successfully",
@@ -211,7 +214,11 @@ const updateStudentRecord = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
-    const RecordAll = await fetchStudentListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchStudentListAndCard(
+      { _id: Record._id },
+      {},
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Student record updated successfully",
@@ -228,7 +235,7 @@ const deleteStudentRecord = catchAsync(async (req, res) => {
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
-  const RecordAll = await fetchStudentListAndCard({}, {});
+  const RecordAll = await fetchStudentListAndCard({}, {}, {});
   res.send({
     status: constant.SUCCESS,
     message: "Student deleted successfully",

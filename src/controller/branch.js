@@ -12,6 +12,7 @@ const branchCode = "code"; // branch code is auto incremented
 /* ************************************************************************************** */
 const fetchBranchListAndCard = async (
   tableDataCondition,
+  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -19,7 +20,7 @@ const fetchBranchListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $count: "total" }],
+        total: [{ $match: cardsCondition }, { $count: "total" }],
 
         cards: [
           {
@@ -78,7 +79,10 @@ const getBranchRecord = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const user = req.user;
+  const userId = user._id;
+
   let tableDataCondition = {};
+  let cardsCondition = {};
 
   // Variables For Pagination
   let limit = parseInt(data.limit);
@@ -87,6 +91,10 @@ const getBranchRecord = catchAsync(async (req, res) => {
     limit: limit,
     skipPage: skipPage,
   };
+
+  // sending user id in cards and table data condition to get only related data
+  tableDataCondition.assignTo = new mongoose.Types.ObjectId(userId);
+  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
 
   // search with branch name and branch code
   if (data.name) {
@@ -110,6 +118,7 @@ const getBranchRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchBranchListAndCard(
     tableDataCondition,
+    cardsCondition,
     paginationCondition
   );
 
@@ -145,6 +154,9 @@ const addBranchRecord = catchAsync(async (req, res) => {
   const user = req.user;
   const userId = user._id;
 
+  let cardsCondition = {};
+  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+
   const isAlreadyExist = await generalService.getRecord("User", {
     email: data.email,
   });
@@ -158,7 +170,11 @@ const addBranchRecord = catchAsync(async (req, res) => {
     createdBy = userId;
     data[branchCode] = await autoIncrement(TableName, branchCode);
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchBranchListAndCard(
+      { _id: Record._id },
+      cardsCondition,
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Branch added successfully",
@@ -173,6 +189,11 @@ const addBranchRecord = catchAsync(async (req, res) => {
 const updateBranchRecord = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
+  const userId = user._id;
+
+  let cardsCondition = {};
+  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+
   const isAlreadyExist = await generalService.getRecord("User", {
     email: data.email,
   });
@@ -188,7 +209,11 @@ const updateBranchRecord = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
-    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchBranchListAndCard(
+      { _id: Record._id },
+      cardsCondition,
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Branch record updated successfully",

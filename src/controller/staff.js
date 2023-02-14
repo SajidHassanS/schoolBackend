@@ -12,6 +12,7 @@ const incrementalId = "staffId"; // id is auto incremented
 /* ************************************************************************************** */
 const fetchStaffListAndCard = async (
   tableDataCondition,
+  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -19,10 +20,10 @@ const fetchStaffListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $count: "total" }],
-
+        total: [{ $match: cardsCondition }, { $count: "total" }],
         cards: [
           // Condition For Cards
+          { $match: cardsCondition },
           {
             $group: {
               _id: null,
@@ -83,7 +84,6 @@ const getStaffRecord = catchAsync(async (req, res) => {
   // const data = req.body;
   const user = req.user;
   let tableDataCondition = {};
-
   // Variables For Pagination
   let limit = parseInt(data.limit);
   let skipPage = limit * (parseInt(data.pageNumber) - 1);
@@ -114,6 +114,7 @@ const getStaffRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchStaffListAndCard(
     tableDataCondition,
+    {},
     paginationCondition
   );
 
@@ -185,7 +186,7 @@ const addStaffRecord = catchAsync(async (req, res) => {
     };
 
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {}, {});
     res.send({
       status: constant.SUCCESS,
       message: "Staff added successfully",
@@ -216,7 +217,7 @@ const updateStaffRecord = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
-    const RecordAll = await fetchStaffListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchStaffListAndCard({ _id: Record._id }, {}, {});
     res.send({
       status: constant.SUCCESS,
       message: "Staff record updated successfully",
@@ -233,7 +234,7 @@ const deleteStaffRecord = catchAsync(async (req, res) => {
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
-  const RecordAll = await fetchStaffListAndCard({}, {});
+  const RecordAll = await fetchStaffListAndCard({}, {}, {});
   res.send({
     status: constant.SUCCESS,
     message: "Staff deleted successfully",

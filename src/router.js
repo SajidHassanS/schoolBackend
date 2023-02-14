@@ -13,6 +13,7 @@ const studentController = require("./controller/student");
 const teacherController = require("./controller/teacher");
 const taxRateController = require("./controller/texRate");
 const noticeboardController = require("./controller/noticeBoard");
+const leaveSettingController = require("./controller/leaveSetting");
 
 // ===================      joi validations    ==================//
 const authJoiValidation = require("./utils/validation/authJoiValidation");
@@ -21,8 +22,8 @@ const classJoi = require("./utils/validation/class");
 const studentJoi = require("./utils/validation/class");
 const teacherJoi = require("./utils/validation/class");
 const staffJoi = require("./utils/validation/class");
-
 const sectionController = require("./controller/section");
+
 //===================       Auth Route       ==============//
 router.post("/signUp", authJoiValidation.signUp, authController.signUp);
 router.post("/login", authController.signIn);
@@ -214,4 +215,25 @@ router.put(
   authenticate,
   noticeboardController.deleteNoticeboardRecord
 );
+//===================      leave setting  route         ==============//
+
+router.get(
+  "/getLeaveSettingRecord/:query",
+  leaveSettingController.getLeaveSettingRecord
+);
+router.post(
+  "/addLeaveSettingRecord",
+  leaveSettingController.addLeaveSettingRecord
+);
+router.put(
+  "/updateLeaveSettingRecord",
+  authenticate,
+  leaveSettingController.updateLeaveSettingRecord
+);
+router.put(
+  "/deleteLeaveSettingRecord",
+  authenticate,
+  leaveSettingController.deleteLeaveSettingRecord
+);
+
 module.exports = router;

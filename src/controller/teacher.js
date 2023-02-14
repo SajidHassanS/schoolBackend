@@ -12,6 +12,7 @@ const incrementalId = "teacherId"; // id is auto incremented
 /* ************************************************************************************** */
 const fetchTeacherListAndCard = async (
   tableDataCondition,
+  cardsCondition,
   paginationCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
@@ -19,10 +20,10 @@ const fetchTeacherListAndCard = async (
   const aggregateArray = [
     {
       $facet: {
-        total: [{ $count: "total" }],
-
+        total: [{ $match: cardsCondition }, { $count: "total" }],
         cards: [
           // Condition For Cards
+          { $match: cardsCondition },
           {
             $group: {
               _id: null,
@@ -83,7 +84,7 @@ const getTeacherRecord = catchAsync(async (req, res) => {
   // const data = req.body;
   const user = req.user;
   let tableDataCondition = {};
-
+  let cardsCondition = {};
   // Variables For Pagination
   let limit = parseInt(data.limit);
   let skipPage = limit * (parseInt(data.pageNumber) - 1);
@@ -92,7 +93,13 @@ const getTeacherRecord = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  // Search with teacher name or teacher id 
+  // Condition If User Is principal
+  if (user.role === "principal") {
+    tableDataCondition.assignTo = new mongoose.Types.ObjectId(user._id);
+    cardsCondition.assignTo = new mongoose.Types.ObjectId(user._id);
+  }
+
+  // Search with teacher name or teacher id
   if (data.name) {
     tableDataCondition = {
       $expr: {
@@ -114,6 +121,7 @@ const getTeacherRecord = catchAsync(async (req, res) => {
 
   const Record = await fetchTeacherListAndCard(
     tableDataCondition,
+    cardsCondition,
     paginationCondition
   );
 
@@ -148,7 +156,7 @@ const addTeacherRecord = catchAsync(async (req, res) => {
   const data = res.body;
   const user = req.user;
   const userId = user._id;
-
+  let cardsCondition = {};
   const isAlreadyExist = await generalService.getRecord("User", {
     email: data.email,
   });
@@ -158,6 +166,11 @@ const addTeacherRecord = catchAsync(async (req, res) => {
       message: "Email already exists",
     });
   } else {
+    if (user.role === "superAdmin") {
+      // if teacher is added by super admin them
+      data.branchId = userId;
+    }
+
     createdBy = userId;
     data.role = "teacher";
     data[incrementalId] = await autoIncrement(TableName, incrementalId);
@@ -186,7 +199,11 @@ const addTeacherRecord = catchAsync(async (req, res) => {
     };
 
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchBranchListAndCard(
+      { _id: Record._id },
+      cardsCondition,
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Teacher added successfully",
@@ -200,6 +217,7 @@ const addTeacherRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateTeacherRecord = catchAsync(async (req, res) => {
   const data = req.body;
+  let cardsCondition = {};
   const user = req.user;
   const userId = user._id;
   data.updatedAt = userId;
@@ -217,7 +235,11 @@ const updateTeacherRecord = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
-    const RecordAll = await fetchTeacherListAndCard({ _id: Record._id }, {});
+    const RecordAll = await fetchTeacherListAndCard(
+      { _id: Record._id },
+      cardsCondition,
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Teacher record updated successfully",
@@ -234,7 +256,7 @@ const deleteTeacherRecord = catchAsync(async (req, res) => {
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
-  const RecordAll = await fetchTeacherListAndCard({}, {});
+  const RecordAll = await fetchTeacherListAndCard({}, {}, {});
   res.send({
     status: constant.SUCCESS,
     message: "Teacher deleted successfully",
