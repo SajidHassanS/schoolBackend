@@ -8,9 +8,14 @@ exports.addValidation = function (req, res, next) {
   const data = req.body;
   let objectValidateScheme = joi.object().keys({
     fullName: joi.string().required(),
-    email: joi.string().required(),
+    designation: joi.string().required(),
+    branchId: joi.string().required(),
     phoneNumber: joi.string().required(),
+    joiningDate: joi.string().required(),
+    email: joi.string().required(),
+    birthday: joi.string().required(),
     gender: joi.string().required(),
+    address: joi.string().required(),
   });
 
   try {
@@ -36,8 +41,11 @@ exports.editValidation = function (req, res, next) {
   let objectValidateScheme = joi.object().keys({
     _id: joi.string().required(),
     branchId: joi.string().required(),
-    sectionId: joi.string().required(),
-    className: joi.string().required(),
+    fullName: joi.string().required(),
+    designation: joi.string().required(),
+    phoneNumber: joi.string().required(),
+    email: joi.string().required(),
+    address: joi.string().required(),
   });
 
   try {

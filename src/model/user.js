@@ -30,6 +30,15 @@ const User = new mongoose.Schema(
     userName: {
       type: String,
     },
+    branchName: {
+      type: String,
+    },
+    designation: { 
+      type: String,
+    },
+    joiningDate: {
+      type: Date,
+    },
     email: {
       type: String,
       trim: true,

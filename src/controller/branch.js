@@ -88,7 +88,7 @@ const getBranchRecord = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  // search with branch name and bran code
+  // search with branch name and branch code
   if (data.name) {
     tableDataCondition = {
       $expr: {

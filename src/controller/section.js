@@ -72,12 +72,11 @@ const getSection = catchAsync(async (req, res) => {
 // POST/ADD Section Record
 /* ************************************************************************************** */
 const addSection = catchAsync(async (req, res) => {
-  const data = JSON.parse(req.params.query);
-  //const data = req.body;
+  const data = req.body;
      console.log("====",data);
-    // const user = req.user;
-    // const userId = user._id;
-    // data.createdBy = userId;
+    const user = req.user;
+    const userId = user._id;
+    data.createdBy = userId;
 
       //increment game ID automatically
       data[incrementalSNo] = await autoIncrement(TableName, incrementalSNo);
