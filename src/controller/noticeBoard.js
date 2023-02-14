@@ -94,7 +94,7 @@ const fetchNoticeBoardListAndCard = async (
 /* ************************************************************************************** */
 // Get noticeboard record
 /* ************************************************************************************** */
-const getNoticeboardRecord = catchAsync(async (req, res) => {
+const getNoticeboard= catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   const user = req.user;
   let tableDataCondition = {};
@@ -162,7 +162,7 @@ const getNoticeboardRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Add noticeboard record
 /* ************************************************************************************** */
-const addNoticeboardRecord = catchAsync(async (req, res) => {
+const addNoticeboard= catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   data.createdBy = user._id; // assigning user id to createdBy
@@ -199,7 +199,7 @@ const addNoticeboardRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Edit noticeboard record
 /* ************************************************************************************** */
-const editNoticeboardRecord = catchAsync(async (req, res) => {
+const editNoticeboard = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.findAndModifyRecord(
     TableName,
@@ -217,7 +217,7 @@ const editNoticeboardRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Delete noticeboard record
 /* ************************************************************************************** */
-const deleteNoticeboardRecord = catchAsync(async (req, res) => {
+const deleteNoticeboard= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -235,8 +235,8 @@ const deleteNoticeboardRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  getNoticeboardRecord,
-  addNoticeboardRecord,
-  editNoticeboardRecord,
-  deleteNoticeboardRecord,
+  getNoticeboard,
+  addNoticeboard,
+  editNoticeboard,
+  deleteNoticeboard,
 };

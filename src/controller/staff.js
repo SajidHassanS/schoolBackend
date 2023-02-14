@@ -79,7 +79,7 @@ const fetchStaffListAndCard = async (
 /* ************************************************************************************** */
 /*                              fetch staff record                                      */
 /* ************************************************************************************** */
-const getStaffRecord = catchAsync(async (req, res) => {
+const getStaff = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const user = req.user;
@@ -145,7 +145,7 @@ const getStaffRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                              add staff record                                       */
 /* ************************************************************************************** */
-const addStaffRecord = catchAsync(async (req, res) => {
+const addStaff= catchAsync(async (req, res) => {
   const data = res.body;
   const user = req.user;
   const userId = user._id;
@@ -198,7 +198,7 @@ const addStaffRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               edit staff record                                      */
 /* ************************************************************************************** */
-const updateStaffRecord = catchAsync(async (req, res) => {
+const updateStaff= catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   const userId = user._id;
@@ -229,7 +229,7 @@ const updateStaffRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               delete staff record                                    */
 /* ************************************************************************************** */
-const deleteStaffRecord = catchAsync(async (req, res) => {
+const deleteStaff= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -246,8 +246,8 @@ const deleteStaffRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  addStaffRecord,
-  getStaffRecord,
-  updateStaffRecord,
-  deleteStaffRecord,
+  addStaff,
+  getStaff,
+  updateStaff,
+  deleteStaff,
 };

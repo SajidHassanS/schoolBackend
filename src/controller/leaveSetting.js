@@ -8,7 +8,7 @@ const TableName = "LeaveSetting";
 /* ************************************************************************************** */
 // get leave record
 /* ************************************************************************************** */
-const getLeaveSettingRecord = catchAsync(async (req, res) => {
+const getLeaveSetting= catchAsync(async (req, res) => {
   // const data = JSON.parse(req.params.query);
   //   const user = req.user;
   //   const userId = user._id;
@@ -23,7 +23,7 @@ const getLeaveSettingRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // add leave setting record
 /* ************************************************************************************** */
-const addLeaveSettingRecord = catchAsync(async (req, res) => {
+const addLeaveSetting= catchAsync(async (req, res) => {
   const data = req.body;
   //   const user = req.user;
   //   const userId = user._id;
@@ -39,7 +39,7 @@ const addLeaveSettingRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // update leave setting record
 /* ************************************************************************************** */
-const updateLeaveSettingRecord = catchAsync(async (req, res) => {
+const updateLeaveSetting= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.findAndModifyRecord(
     TableName,
@@ -56,7 +56,7 @@ const updateLeaveSettingRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // delete leave record
 /* ************************************************************************************** */
-const deleteLeaveSettingRecord = catchAsync(async (req, res) => {
+const deleteLeaveSetting= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -72,8 +72,8 @@ const deleteLeaveSettingRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  getLeaveSettingRecord,
-  updateLeaveSettingRecord,
-  deleteLeaveSettingRecord,
-  addLeaveSettingRecord,
+  getLeaveSetting,
+  updateLeaveSetting,
+  deleteLeaveSetting,
+  addLeaveSetting
 };

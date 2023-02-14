@@ -48,192 +48,172 @@ router.get(
 );
 
 //===================      branch Route         ==============//
-router.get(
-  "/getBranchRecord/:query",
-  authenticate,
-  branchController.getBranchRecord
-);
+router.get("/getBranch/:query", authenticate, branchController.getBranch);
 router.post(
-  "/addBranchRecord",
+  "/addBranch",
   branchJoi.addValidation,
   authenticate,
-  branchController.addBranchRecord
+  branchController.addBranch
 );
 router.put(
-  "/updateBranchRecord",
+  "/updateBranch",
   branchJoi.editValidation,
   authenticate,
-  branchController.updateBranchRecord
+  branchController.updateBranch
 );
 router.put(
-  "/deleteBranchRecord",
+  "/deleteBranch",
   branchJoi.deleteValidation,
   authenticate,
-  branchController.deleteBranchRecord
+  branchController.deleteBranch
 );
 
 //===================      class Route         ==============//
-router.get(
-  "/getClassRecord/:query",
-  authenticate,
-  classController.getClassRecord
-);
+router.get("/getClass/:query", authenticate, classController.getClass);
 router.post(
-  "/addClassRecord",
+  "/addClass",
   classJoi.addValidation,
   authenticate,
-  classController.addClassRecord
+  classController.addClass
 );
 router.put(
-  "/updateClassRecord",
+  "/updateClass",
   classJoi.editValidation,
   authenticate,
-  classController.updateClassRecord
+  classController.updateClass
 );
 router.put(
-  "/deleteClassRecord",
+  "/deleteClass",
   classJoi.deleteValidation,
   authenticate,
-  classController.deleteClassRecord
+  classController.deleteClass
 );
 //===================      teacher Route         ==============//
 router.get(
-  "/getTeacherRecord/:query",
+  "/getTeacher/:query",
   authenticate,
-  teacherController.getTeacherRecord
+  teacherController.getTeacher
 );
 router.post(
-  "/addTeacherRecord",
+  "/addTeacher",
   teacherJoi.addValidation,
   authenticate,
-  teacherController.addTeacherRecord
+  teacherController.addTeacher
 );
 router.put(
-  "/updateTeacherRecord",
+  "/updateTeacher",
   teacherJoi.editValidation,
   authenticate,
-  teacherController.updateTeacherRecord
+  teacherController.updateTeacher
 );
 router.put(
-  "/deleteTeacherRecord",
+  "/deleteTeacher",
   teacherJoi.deleteValidation,
   authenticate,
-  teacherController.deleteTeacherRecord
+  teacherController.deleteTeacher
 );
 //===================      student Route         ==============//
 router.get(
-  "/getStudentRecord/:query",
+  "/getStudent/:query",
   authenticate,
-  studentController.getStudentRecord
+  studentController.getStudent
 );
 router.post(
-  "/addStudentRecord",
+  "/addStudent",
   studentJoi.addValidation,
   authenticate,
-  studentController.addStudentRecord
+  studentController.addStudent
 );
 router.put(
-  "/updateStudentRecord",
+  "/updateStudent",
   studentJoi.editValidation,
   authenticate,
-  studentController.updateStudentRecord
+  studentController.updateStudent
 );
 router.put(
-  "/deleteStudentRecord",
+  "/deleteStudent",
   studentJoi.deleteValidation,
   authenticate,
-  studentController.deleteStudentRecord
+  studentController.deleteStudent
 );
 
 //===================      staff Route         ==============//
-router.get(
-  "/getStaffRecord/:query",
-  authenticate,
-  staffController.getStaffRecord
-);
+router.get("/getStaff/:query", authenticate, staffController.getStaff);
 router.post(
-  "/addStaffRecord",
+  "/addStaff",
   staffJoi.addValidation,
   authenticate,
-  staffController.addStaffRecord
+  staffController.addStaff
 );
 router.put(
-  "/updateStaffRecord",
+  "/updateStaff",
   staffJoi.editValidation,
   authenticate,
-  staffController.updateStaffRecord
+  staffController.updateStaff
 );
 router.put(
-  "/deleteStaffRecord",
+  "/deleteStaff",
   staffJoi.deleteValidation,
   authenticate,
-  staffController.deleteStaffRecord
+  staffController.deleteStaff
 );
 
 //===================      tax Rate Route         ==============//
 
 router.get(
-  "/getTaxRateRecord/:query",
+  "/getTaxRate/:query",
   authenticate,
-  taxRateController.getTaxRateRecord
+  taxRateController.getTaxRate
 );
-router.post(
-  "/addTaxRateRecord",
+router.post("/addTaxRate", authenticate, taxRateController.addTaxRate);
+router.put(
+  "/updateTaxRate",
   authenticate,
-  taxRateController.addTaxRateRecord
+  taxRateController.updateTaxRate
 );
 router.put(
-  "/updateTaxRateRecord",
+  "/deleteTaxRate",
   authenticate,
-  taxRateController.updateTaxRateRecord
-);
-router.put(
-  "/deleteTaxRateRecord",
-  authenticate,
-  taxRateController.deleteTaxRateRecord
+  taxRateController.deleteTaxRate
 );
 
 //===================      noticeboard  route         ==============//
 
 router.get(
-  "/getNoticeboardRecord/:query",
+  "/getNoticeboard/:query",
   authenticate,
-  noticeboardController.getNoticeboardRecord
-);
+  noticeboardController.getNoticeboard);
 router.post(
-  "/addNoticeboardRecord",
+  "/addNoticeboard",
   authenticate,
-  noticeboardController.addNoticeboardRecord
+  noticeboardController.addNoticeboard
 );
 router.put(
-  "/editNoticeboardRecord",
+  "/editNoticeboard",
   authenticate,
-  noticeboardController.editNoticeboardRecord
+  noticeboardController.editNoticeboard
 );
 router.put(
-  "/deleteNoticeboardRecord",
+  "/deleteNoticeboard",
   authenticate,
-  noticeboardController.deleteNoticeboardRecord
+  noticeboardController.deleteNoticeboard
 );
 //===================      leave setting  route         ==============//
 
 router.get(
-  "/getLeaveSettingRecord/:query",
-  leaveSettingController.getLeaveSettingRecord
+  "/getLeaveSetting/:query",
+  leaveSettingController.getLeaveSetting
 );
-router.post(
-  "/addLeaveSettingRecord",
-  leaveSettingController.addLeaveSettingRecord
+router.post("/addLeaveSetting", leaveSettingController.addLeaveSetting);
+router.put(
+  "/updateLeaveSetting",
+  authenticate,
+  leaveSettingController.updateLeaveSetting
 );
 router.put(
-  "/updateLeaveSettingRecord",
+  "/deleteLeaveSetting",
   authenticate,
-  leaveSettingController.updateLeaveSettingRecord
-);
-router.put(
-  "/deleteLeaveSettingRecord",
-  authenticate,
-  leaveSettingController.deleteLeaveSettingRecord
+  leaveSettingController.deleteLeaveSetting
 );
 
 module.exports = router;

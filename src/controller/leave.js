@@ -96,7 +96,7 @@ const fetchLeaveListAndCard = async (
 /* ************************************************************************************** */
 // get leave record
 /* ************************************************************************************** */
-const getLeaveRecord = catchAsync(async (req, res) => {
+const getLeave = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   const user = req.user;
   let tableDataCondition = {};
@@ -161,7 +161,7 @@ const getLeaveRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // add leave record
 /* ************************************************************************************** */
-const addLeaveRecord = catchAsync(async (req, res) => {
+const addLeave = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   data.createdBy = user._id; // assigning user id to createdBy
@@ -194,7 +194,7 @@ const addLeaveRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // edit leave record
 /* ************************************************************************************** */
-const editLeaveRecord = catchAsync(async (req, res) => {
+const editLeave= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.findAndModifyRecord(
     TableName,
@@ -212,7 +212,7 @@ const editLeaveRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // delete leave record
 /* ************************************************************************************** */
-const deleteLeaveRecord = catchAsync(async (req, res) => {
+const deleteLeave= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -230,8 +230,8 @@ const deleteLeaveRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  getLeaveRecord,
-  addLeaveRecord,
-  editLeaveRecord,
-  deleteLeaveRecord,
+  getLeave,
+  addLeave,
+  editLeave,
+  deleteLeave,
 };

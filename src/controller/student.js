@@ -78,7 +78,7 @@ const fetchStudentListAndCard = async (
 /* ************************************************************************************** */
 /*                              fetch student record                                      */
 /* ************************************************************************************** */
-const getStudentRecord = catchAsync(async (req, res) => {
+const getStudent = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const user = req.user;
@@ -145,7 +145,7 @@ const getStudentRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                              add student record                                       */
 /* ************************************************************************************** */
-const addStudentRecord = catchAsync(async (req, res) => {
+const addStudent= catchAsync(async (req, res) => {
   const data = res.body;
   const user = req.user;
   const userId = user._id;
@@ -195,7 +195,7 @@ const addStudentRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************* */
 /*                               edit student record                                      */
 /* ************************************************************************************** */
-const updateStudentRecord = catchAsync(async (req, res) => {
+const updateStudent = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   const userId = user._id;
@@ -230,7 +230,7 @@ const updateStudentRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               delete student record                                    */
 /* ************************************************************************************** */
-const deleteStudentRecord = catchAsync(async (req, res) => {
+const deleteStudent= catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -247,8 +247,8 @@ const deleteStudentRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  addStudentRecord,
-  getStudentRecord,
-  updateStudentRecord,
-  deleteStudentRecord,
+  addStudent,
+  getStudent,
+  updateStudent,
+  deleteStudent,
 };

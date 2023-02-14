@@ -19,6 +19,11 @@ const fetchBranchListAndCard = async (
   let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
   const aggregateArray = [
     {
+      $match: {
+        role: "principal",
+      },
+    },
+    {
       $facet: {
         total: [{ $match: cardsCondition }, { $count: "total" }],
 
@@ -75,7 +80,7 @@ const fetchBranchListAndCard = async (
 /* ************************************************************************************** */
 /*                              fetch branch record                                       */
 /* ************************************************************************************** */
-const getBranchRecord = catchAsync(async (req, res) => {
+const getBranch = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const user = req.user;
@@ -93,8 +98,8 @@ const getBranchRecord = catchAsync(async (req, res) => {
   };
 
   // sending user id in cards and table data condition to get only related data
-  tableDataCondition.assignTo = new mongoose.Types.ObjectId(userId);
-  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+  // tableDataCondition.assignTo = new mongoose.Types.ObjectId(userId);
+  // cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
 
   // search with branch name and branch code
   if (data.name) {
@@ -149,7 +154,7 @@ const getBranchRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                              add branch record                                       */
 /* ************************************************************************************** */
-const addBranchRecord = catchAsync(async (req, res) => {
+const addBranch = catchAsync(async (req, res) => {
   const data = res.body;
   const user = req.user;
   const userId = user._id;
@@ -186,7 +191,7 @@ const addBranchRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               edit branch record                                       */
 /* ************************************************************************************** */
-const updateBranchRecord = catchAsync(async (req, res) => {
+const updateBranch = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   const userId = user._id;
@@ -225,7 +230,7 @@ const updateBranchRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               delete branch record                                     */
 /* ************************************************************************************** */
-const deleteBranchRecord = catchAsync(async (req, res) => {
+const deleteBranch = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -242,8 +247,8 @@ const deleteBranchRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  addBranchRecord,
-  getBranchRecord,
-  updateBranchRecord,
-  deleteBranchRecord,
+  addBranch,
+  getBranch,
+  updateBranch,
+  deleteBranch,
 };

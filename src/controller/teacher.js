@@ -79,7 +79,7 @@ const fetchTeacherListAndCard = async (
 /* ************************************************************************************** */
 /*                              fetch teacher record                                      */
 /* ************************************************************************************** */
-const getTeacherRecord = catchAsync(async (req, res) => {
+const getTeacher= catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const user = req.user;
@@ -152,7 +152,7 @@ const getTeacherRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                              add teacher record                                       */
 /* ************************************************************************************** */
-const addTeacherRecord = catchAsync(async (req, res) => {
+const addTeacher = catchAsync(async (req, res) => {
   const data = res.body;
   const user = req.user;
   const userId = user._id;
@@ -215,7 +215,7 @@ const addTeacherRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               edit teacher record                                      */
 /* ************************************************************************************** */
-const updateTeacherRecord = catchAsync(async (req, res) => {
+const updateTeacher= catchAsync(async (req, res) => {
   const data = req.body;
   let cardsCondition = {};
   const user = req.user;
@@ -251,7 +251,7 @@ const updateTeacherRecord = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               delete teacher record                                    */
 /* ************************************************************************************** */
-const deleteTeacherRecord = catchAsync(async (req, res) => {
+const deleteTeacher = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
@@ -268,8 +268,8 @@ const deleteTeacherRecord = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  addTeacherRecord,
-  getTeacherRecord,
-  updateTeacherRecord,
-  deleteTeacherRecord,
+  addTeacher,
+  getTeacher,
+  updateTeacher,
+  deleteTeacher,
 };

@@ -2,10 +2,8 @@ const constant = require("../utils/constant"),
   generalService = require("../services/generalOperation"),
   _ = require("lodash");
 const catchAsync = require("../utils/catchAsync");
-const AppError = require("../utils/appError");
 const mongoose = require("mongoose");
 const { autoIncrement } = require("../utils/commonFunctions");
-const { result } = require("lodash");
 const incrementalSNo = "sNo"; // id is auto incremented
 
 const TableName = "Section";
@@ -21,7 +19,7 @@ const fetchSectionList = async (condition) => {
       $project: {
         sNo: 1,
         sectionName: 1,
-        createdAt:1,
+        createdAt: 1,
         createdBy: 1,
       },
     },
@@ -34,13 +32,12 @@ const fetchSectionList = async (condition) => {
 };
 
 /* ************************************************************************************** */
-// Get Section Details and findandModify conditions
+// Get Section Details and find and Modify conditions
 /* ************************************************************************************** */
 const getSection = catchAsync(async (req, res) => {
-
   const data = req.body;
   let condition = {};
-{
+
   if (data.name) {
     condition = {
       $expr: {
@@ -57,10 +54,8 @@ const getSection = catchAsync(async (req, res) => {
   if (data.key === "status" && data.value !== "all" && data.value !== "") {
     condition.status = data.value;
   }
-  condition.role = "admin";
-}
+
   const Record = await fetchSectionList(condition);
-  //console.log("==========", Record);
   res.send({
     status: constant.SUCCESS,
     message: "Get Section Detail Successfully",
@@ -73,32 +68,30 @@ const getSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const addSection = catchAsync(async (req, res) => {
   const data = req.body;
-     console.log("====",data);
-    const user = req.user;
-    const userId = user._id;
-    data.createdBy = userId;
+  console.log("====", data);
+  const user = req.user;
+  const userId = user._id;
+  data.createdBy = userId;
 
-      //increment game ID automatically
-      data[incrementalSNo] = await autoIncrement(TableName, incrementalSNo);
-      
-    const oldSectionName = await generalService.getRecord(TableName, {
-        sectionName: data.sectionName,
-      });
-      
-      if (oldSectionName.length > 0 && data.sectionName === oldSectionName[0].sectionName) {
-       
-        res.send({
-          status: constant.ERROR,
-          message: "Error occurred SectionName is duplicated ",
-        });
-      } else {
-        const Record = await generalService.addRecord(TableName, data);
-        res.send({
-          status: constant.SUCCESS,
-          message: "Section added successfully",
-          Record
-        });
-      }  
+  data[incrementalSNo] = await autoIncrement(TableName, incrementalSNo);
+
+  const isSectionAlreadyExist = await generalService.getRecord(TableName, {
+    sectionName: data.sectionName,
+  });
+
+  if (isSectionAlreadyExist && isSectionAlreadyExist.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Error occurred SectionName is duplicated ",
+    });
+  } else {
+    const Record = await generalService.addRecord(TableName, data);
+    res.send({
+      status: constant.SUCCESS,
+      message: "Section added successfully",
+      Record,
+    });
+  }
 });
 
 /* ************************************************************************************** */
@@ -127,16 +120,16 @@ const editSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Delete Record and search conditions
 /* ************************************************************************************** */
-const deleteSection= catchAsync(async (req, res) => {
+const deleteSection = catchAsync(async (req, res) => {
   const data = req.body;
-    const Record = await generalService.deleteRecord(TableName, {
-      _id: data._id,
-    });
-    res.send({
-      status: constant.SUCCESS,
-      message: "Record Deleted Successfully",
-      Record
-    });
+  const Record = await generalService.deleteRecord(TableName, {
+    _id: data._id,
+  });
+  res.send({
+    status: constant.SUCCESS,
+    message: "Record Deleted Successfully",
+    Record,
+  });
 });
 
 module.exports = {
