@@ -265,6 +265,31 @@ const deleteClass = catchAsync(async (req, res) => {
   });
 });
 
+const getClassName = catchAsync(async (req, res) => {
+  const aggregateArray = [
+    // {
+    //   $match: {
+    //     role: "principal",
+    //   },
+    // },
+    {
+      $project: {
+        _id: 1,
+        fullName: 1,
+      },
+    },
+  ];
+  const Record = await generalService.getRecordAggregate(
+    TableName,
+    aggregateArray
+  );
+  res.send({
+    status: constant.SUCCESS,
+    message: "Branch name record successfully",
+    Record,
+  });
+});
+
 module.exports = {
   addClass,
   getClass,

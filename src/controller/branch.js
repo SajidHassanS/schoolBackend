@@ -5,7 +5,7 @@ const { autoIncrement } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
 const TableName = "User";
-const branchCode = "code"; // branch code is auto incremented
+const incrementId = "sNo"; // id is auto incremented
 
 /* ************************************************************************************** */
 /*                              fetch branch list and cards          g                    */
@@ -21,6 +21,9 @@ const fetchBranchListAndCard = async (
     {
       $match: {
         role: "principal",
+        status: {
+          $ne: "delete",
+        },
       },
     },
     {
@@ -58,10 +61,12 @@ const fetchBranchListAndCard = async (
             $project: {
               _id: 1,
               fullName: 1,
-              code: 1,
+              branchCode: 1,
+              sNo: 1,
+              branchName: 1,
               email: 1,
-              password: 1,
               address: 1,
+              status: 1,
               phoneNumber: 1,
             },
           },
@@ -90,16 +95,16 @@ const getBranch = catchAsync(async (req, res) => {
   let cardsCondition = {};
 
   // Variables For Pagination
-  let limit = parseInt(data.limit);
-  let skipPage = limit * (parseInt(data.pageNumber) - 1);
+  let limit = parseInt(data.limit) || 10;
+  let skipPage = limit * (parseInt(data.pageNumber) - 1) || 0;
   let paginationCondition = {
     limit: limit,
     skipPage: skipPage,
   };
 
   // sending user id in cards and table data condition to get only related data
-  // tableDataCondition.assignTo = new mongoose.Types.ObjectId(userId);
-  // cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+  tableDataCondition.createdBy = new mongoose.Types.ObjectId(userId);
+  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
 
   // search with branch name and branch code
   if (data.name) {
@@ -155,12 +160,12 @@ const getBranch = catchAsync(async (req, res) => {
 /*                              add branch record                                       */
 /* ************************************************************************************** */
 const addBranch = catchAsync(async (req, res) => {
-  const data = res.body;
+  const data = req.body;
   const user = req.user;
   const userId = user._id;
 
   let cardsCondition = {};
-  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
 
   const isAlreadyExist = await generalService.getRecord("User", {
     email: data.email,
@@ -171,9 +176,13 @@ const addBranch = catchAsync(async (req, res) => {
       message: "Email already exists",
     });
   } else {
-    data.status = "principal";
-    createdBy = userId;
-    data[branchCode] = await autoIncrement(TableName, branchCode);
+    data.role = "principal";
+    data.createdBy = userId;
+
+    data[incrementId] = await autoIncrement(TableName, incrementId);
+
+    // adding B with branch code
+    data.branchCode = "B".concat(data[incrementId]);
     const Record = await generalService.addRecord(TableName, data);
     const RecordAll = await fetchBranchListAndCard(
       { _id: Record._id },
@@ -199,32 +208,51 @@ const updateBranch = catchAsync(async (req, res) => {
   let cardsCondition = {};
   cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
 
-  const isAlreadyExist = await generalService.getRecord("User", {
-    email: data.email,
+  data.updatedAt = Date.now();
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    data
+  );
+  const RecordAll = await fetchBranchListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
+  res.send({
+    status: constant.SUCCESS,
+    message: "Branch record updated successfully",
+    Record: RecordAll[0],
   });
-  if (isAlreadyExist && isAlreadyExist.length > 0) {
-    res.send({
-      status: constant.ERROR,
-      message: "Email already exists",
-    });
-  } else {
-    data.updatedAt = Date.now();
-    const Record = await generalService.findAndModifyRecord(
-      TableName,
-      { _id: data._id },
-      data
-    );
-    const RecordAll = await fetchBranchListAndCard(
-      { _id: Record._id },
-      cardsCondition,
-      {}
-    );
-    res.send({
-      status: constant.SUCCESS,
-      message: "Branch record updated successfully",
-      Record: RecordAll[0],
-    });
-  }
+});
+
+/* ************************************************************************************** */
+/*                               edit branch record                                       */
+/* ************************************************************************************** */
+const updateBranchStatus = catchAsync(async (req, res) => {
+  const data = req.body;
+  const user = req.user;
+  const userId = user._id;
+
+  let cardsCondition = {};
+  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+
+  data.updatedAt = Date.now();
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    data
+  );
+  const RecordAll = await fetchBranchListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
+  res.send({
+    status: constant.SUCCESS,
+    message: "Branch status updated successfully",
+    Record: RecordAll[0],
+  });
 });
 
 /* ************************************************************************************** */
@@ -246,9 +274,35 @@ const deleteBranch = catchAsync(async (req, res) => {
   });
 });
 
+const getBranchName = catchAsync(async (req, res) => {
+  const aggregateArray = [
+    {
+      $match: {
+        role: "principal",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        fullName: 1,
+      },
+    },
+  ];
+  const Record = await generalService.getRecordAggregate(
+    TableName,
+    aggregateArray
+  );
+  res.send({
+    status: constant.SUCCESS,
+    message: "Branch name record successfully",
+    Record,
+  });
+});
 module.exports = {
   addBranch,
   getBranch,
   updateBranch,
   deleteBranch,
+  getBranchName,
+  updateBranchStatus,
 };

@@ -12,6 +12,7 @@ const staffController = require("./controller/staff");
 const studentController = require("./controller/student");
 const teacherController = require("./controller/teacher");
 const taxRateController = require("./controller/texRate");
+const sectionController = require("./controller/section");
 const noticeboardController = require("./controller/noticeBoard");
 const leaveSettingController = require("./controller/leaveSetting");
 
@@ -19,10 +20,12 @@ const leaveSettingController = require("./controller/leaveSetting");
 const authJoiValidation = require("./utils/validation/authJoiValidation");
 const branchJoi = require("./utils/validation/branch");
 const classJoi = require("./utils/validation/class");
-const studentJoi = require("./utils/validation/class");
-const teacherJoi = require("./utils/validation/class");
-const staffJoi = require("./utils/validation/class");
-const sectionController = require("./controller/section");
+const studentJoi = require("./utils/validation/student");
+const teacherJoi = require("./utils/validation/teacher");
+const staffJoi = require("./utils/validation//staff");
+const taxRateJoi = require("./utils/validation/texRate");
+const sectionJoi = require("./utils/validation/section");
+const leaveSettingJoi = require("./utils/validation/leaveSetting");
 
 //===================       Auth Route       ==============//
 router.post("/signUp", authJoiValidation.signUp, authController.signUp);
@@ -49,6 +52,11 @@ router.get(
 
 //===================      branch Route         ==============//
 router.get("/getBranch/:query", authenticate, branchController.getBranch);
+router.get(
+  "/getBranchName/:query",
+  authenticate,
+  branchController.getBranchName
+);
 router.post(
   "/addBranch",
   branchJoi.addValidation,
@@ -57,9 +65,15 @@ router.post(
 );
 router.put(
   "/updateBranch",
-  branchJoi.editValidation,
+  branchJoi.updateValidation,
   authenticate,
   branchController.updateBranch
+);
+router.put(
+  "/updateBranchStatus",
+  branchJoi.updateStatusValidation,
+  authenticate,
+  branchController.updateBranchStatus
 );
 router.put(
   "/deleteBranch",
@@ -78,7 +92,7 @@ router.post(
 );
 router.put(
   "/updateClass",
-  classJoi.editValidation,
+  classJoi.updateValidation,
   authenticate,
   classController.updateClass
 );
@@ -89,11 +103,7 @@ router.put(
   classController.deleteClass
 );
 //===================      teacher Route         ==============//
-router.get(
-  "/getTeacher/:query",
-  authenticate,
-  teacherController.getTeacher
-);
+router.get("/getTeacher/:query", authenticate, teacherController.getTeacher);
 router.post(
   "/addTeacher",
   teacherJoi.addValidation,
@@ -102,7 +112,7 @@ router.post(
 );
 router.put(
   "/updateTeacher",
-  teacherJoi.editValidation,
+  teacherJoi.updateValidation,
   authenticate,
   teacherController.updateTeacher
 );
@@ -112,12 +122,9 @@ router.put(
   authenticate,
   teacherController.deleteTeacher
 );
+
 //===================      student Route         ==============//
-router.get(
-  "/getStudent/:query",
-  authenticate,
-  studentController.getStudent
-);
+router.get("/getStudent/:query", authenticate, studentController.getStudent);
 router.post(
   "/addStudent",
   studentJoi.addValidation,
@@ -126,7 +133,7 @@ router.post(
 );
 router.put(
   "/updateStudent",
-  studentJoi.editValidation,
+  studentJoi.updateValidation,
   authenticate,
   studentController.updateStudent
 );
@@ -147,7 +154,7 @@ router.post(
 );
 router.put(
   "/updateStaff",
-  staffJoi.editValidation,
+  staffJoi.updateValidation,
   authenticate,
   staffController.updateStaff
 );
@@ -159,30 +166,32 @@ router.put(
 );
 
 //===================      tax Rate Route         ==============//
-
-router.get(
-  "/getTaxRate/:query",
+router.get("/getTaxRate/:query", authenticate, taxRateController.getTaxRate);
+router.post(
+  "/addTaxRate",
   authenticate,
-  taxRateController.getTaxRate
+  taxRateJoi.addValidation,
+  taxRateController.addTaxRate
 );
-router.post("/addTaxRate", authenticate, taxRateController.addTaxRate);
 router.put(
   "/updateTaxRate",
   authenticate,
+  taxRateJoi.updateValidation,
   taxRateController.updateTaxRate
 );
 router.put(
   "/deleteTaxRate",
   authenticate,
+  taxRateJoi.deleteValidation,
   taxRateController.deleteTaxRate
 );
-
 //===================      noticeboard  route         ==============//
 
 router.get(
   "/getNoticeboard/:query",
   authenticate,
-  noticeboardController.getNoticeboard);
+  noticeboardController.getNoticeboard
+);
 router.post(
   "/addNoticeboard",
   authenticate,
@@ -198,22 +207,51 @@ router.put(
   authenticate,
   noticeboardController.deleteNoticeboard
 );
-//===================      leave setting  route         ==============//
 
-router.get(
-  "/getLeaveSetting/:query",
-  leaveSettingController.getLeaveSetting
+//===================      leave setting  route         ==============//
+router.get("/getLeaveSetting/:query", leaveSettingController.getLeaveSetting);
+router.post(
+  "/addLeaveSetting",
+  leaveSettingJoi.addValidation,
+  leaveSettingController.addLeaveSetting
 );
-router.post("/addLeaveSetting", leaveSettingController.addLeaveSetting);
 router.put(
   "/updateLeaveSetting",
   authenticate,
+  leaveSettingJoi.updateValidation,
   leaveSettingController.updateLeaveSetting
 );
 router.put(
   "/deleteLeaveSetting",
   authenticate,
+  leaveSettingJoi.deleteValidation,
   leaveSettingController.deleteLeaveSetting
+);
+
+//===================      section  route         ==============//
+router.get("/getSection/:query", authenticate, sectionController.getSection);
+router.get(
+  "/getSectionName/:query",
+  authenticate,
+  sectionController.getSectionName
+);
+router.post(
+  "/addSection",
+  authenticate,
+  sectionJoi.addValidation,
+  sectionController.addSection
+);
+router.put(
+  "/updateSection",
+  authenticate,
+  sectionJoi.updateValidation,
+  sectionController.updateSection
+);
+router.put(
+  "/deleteSection",
+  authenticate,
+  sectionJoi.deleteValidation,
+  sectionController.deleteSection
 );
 
 module.exports = router;

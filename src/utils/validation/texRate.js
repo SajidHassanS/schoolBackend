@@ -1,6 +1,6 @@
 const joi = require("joi");
 
-exports.editValidation = function (req, res, next) {
+exports.updateValidation = function (req, res, next) {
   const data = req.body;
   let objectValidateScheme = joi.object().keys({
     _id: joi.string().required(),

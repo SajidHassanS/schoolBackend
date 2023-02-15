@@ -134,13 +134,12 @@ const deleteRecord = catchAsync(async (req, res) => {
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-  let obj = req.body;
-  console.log(obj.password.password);
-  const password = await bcrypt.hash(obj.password.password, saltRounds);
+  let data = req.body;
+  const password = await bcrypt.hash(data.password, saltRounds);
   const userObj = await generalService.updateRecord(
     "User",
     {
-      _id: obj._id,
+      _id: data._id,
     },
     {
       password: password,

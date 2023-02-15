@@ -58,7 +58,7 @@ const getSection = catchAsync(async (req, res) => {
   const Record = await fetchSectionList(condition);
   res.send({
     status: constant.SUCCESS,
-    message: "Get Section Detail Successfully",
+    message: "Section  record fetch successfully",
     Record,
   });
 });
@@ -68,7 +68,6 @@ const getSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const addSection = catchAsync(async (req, res) => {
   const data = req.body;
-  console.log("====", data);
   const user = req.user;
   const userId = user._id;
   data.createdBy = userId;
@@ -82,7 +81,7 @@ const addSection = catchAsync(async (req, res) => {
   if (isSectionAlreadyExist && isSectionAlreadyExist.length > 0) {
     res.send({
       status: constant.ERROR,
-      message: "Error occurred SectionName is duplicated ",
+      message: "Already section exists with same name",
     });
   } else {
     const Record = await generalService.addRecord(TableName, data);
@@ -97,24 +96,32 @@ const addSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Edit Section Record
 /* ************************************************************************************** */
-const editSection = catchAsync(async (req, res) => {
+const updateSection = catchAsync(async (req, res) => {
   const data = req.body;
   //console.log("============data", data);
   //const user = req.user;
-  const Record = await generalService.findAndModifyRecord(
-    TableName,
-    { _id: data._id },
-    data
-  );
-  const RecordAll = await fetchSectionList({
-    _id: new mongoose.Types.ObjectId(data._id),
+
+  const isSectionAlreadyExist = await generalService.getRecord(TableName, {
+    sectionName: data.sectionName,
   });
 
-  res.send({
-    status: constant.SUCCESS,
-    message: "Update Section Record Successfully",
-    Record: RecordAll[0],
-  });
+  if (isSectionAlreadyExist && isSectionAlreadyExist.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Already section exists with same name",
+    });
+  } else {
+    const Record = await generalService.findAndModifyRecord(
+      TableName,
+      { _id: data._id },
+      data
+    );
+    res.send({
+      status: constant.SUCCESS,
+      message: "Section record updated successfully",
+      Record,
+    });
+  }
 });
 
 /* ************************************************************************************** */
@@ -127,7 +134,27 @@ const deleteSection = catchAsync(async (req, res) => {
   });
   res.send({
     status: constant.SUCCESS,
-    message: "Record Deleted Successfully",
+    message: "Record deleted successfully",
+    Record,
+  });
+});
+
+const getSectionName = catchAsync(async (req, res) => {
+  const aggregateArray = [
+    {
+      $project: {
+        _id: 1,
+        sectionName: 1,
+      },
+    },
+  ];
+  const Record = await generalService.getRecordAggregate(
+    TableName,
+    aggregateArray
+  );
+  res.send({
+    status: constant.SUCCESS,
+    message: "Section name record successfully",
     Record,
   });
 });
@@ -135,6 +162,7 @@ const deleteSection = catchAsync(async (req, res) => {
 module.exports = {
   getSection,
   addSection,
-  editSection,
+  updateSection,
   deleteSection,
+  getSectionName,
 };

@@ -37,7 +37,7 @@ exports.addValidation = function (req, res, next) {
   }
 };
 
-exports.editValidation = function (req, res, next) {
+exports.updateValidation = function (req, res, next) {
   const data = req.body;
   let objectValidateScheme = joi.object().keys({
     _id: joi.string().required(),
@@ -48,7 +48,6 @@ exports.editValidation = function (req, res, next) {
     phoneNumber: joi.string().required(),
     email: joi.string().required(),
     address: joi.string().required(),
-   
   });
 
   try {

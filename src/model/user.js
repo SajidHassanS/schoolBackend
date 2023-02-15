@@ -12,8 +12,9 @@ var validateEmail = function (email) {
 
 const User = new mongoose.Schema(
   {
-    userId: {
+    sNo: {
       type: Number,
+      default: 0,
     },
     teacherId: {
       type: Number,
@@ -26,6 +27,7 @@ const User = new mongoose.Schema(
     },
     fullName: {
       type: String,
+      lowercase: true,
     },
     userName: {
       type: String,
@@ -57,8 +59,8 @@ const User = new mongoose.Schema(
     password: {
       type: String,
     },
-    code: {
-      type: Number,
+    branchCode: {
+      type: String,
     },
     status: {
       type: String,
@@ -125,6 +127,10 @@ const User = new mongoose.Schema(
     branchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {
