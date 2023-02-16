@@ -87,6 +87,7 @@ const fetchBranchListAndCard = async (
 /* ************************************************************************************** */
 const getBranch = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
+
   // const data = req.body;
   const user = req.user;
   const userId = user._id;
@@ -112,7 +113,7 @@ const getBranch = catchAsync(async (req, res) => {
       $expr: {
         $regexMatch: {
           input: {
-            $concat: ["$fullName", { $toString: "$code" }],
+            $concat: ["$branchName", "$branchCode", { $toString: "$sNo" }],
           },
           regex: `.*${data.name}.*`,
           options: "i",
@@ -198,17 +199,17 @@ const addBranch = catchAsync(async (req, res) => {
 });
 
 /* ************************************************************************************** */
-/*                               edit branch record                                       */
+/*                               update branch record                                       */
 /* ************************************************************************************** */
 const updateBranch = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  const userId = user._id;
+  const userId = req.user._id;
 
   let cardsCondition = {};
-  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
-
+  cardsCondition.createdBy = userId;
+  data.updatedBy = userId;
   data.updatedAt = Date.now();
+
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },
@@ -227,15 +228,14 @@ const updateBranch = catchAsync(async (req, res) => {
 });
 
 /* ************************************************************************************** */
-/*                               edit branch record                                       */
+/*                               update branch status record                                       */
 /* ************************************************************************************** */
 const updateBranchStatus = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  const userId = user._id;
+  const userId = req.user._id;
 
   let cardsCondition = {};
-  cardsCondition.assignTo = new mongoose.Types.ObjectId(userId);
+  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
 
   data.updatedAt = Date.now();
   const Record = await generalService.findAndModifyRecord(
@@ -248,6 +248,7 @@ const updateBranchStatus = catchAsync(async (req, res) => {
     cardsCondition,
     {}
   );
+
   res.send({
     status: constant.SUCCESS,
     message: "Branch status updated successfully",
@@ -260,20 +261,33 @@ const updateBranchStatus = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const deleteBranch = catchAsync(async (req, res) => {
   const data = req.body;
-  const Record = await generalService.deleteRecord(TableName, {
-    _id: data._id,
-  });
-  const RecordAll = await fetchBranchListAndCard({}, {}, {});
+  const userId = req.user._id;
+  let cardsCondition = {};
+  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    { status: "delete" }
+  );
+  const RecordAll = await fetchBranchListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
   res.send({
     status: constant.SUCCESS,
     message: "Branch deleted successfully",
     Record: {
-      deletedRecordId: { _id: data._id },
+      tableData: [{ _id: data._id }],
       cards: RecordAll[0].cards,
+      total: RecordAll[0].total,
     },
   });
 });
 
+/* ************************************************************************************** */
+/*                               get branch name record                                     */
+/* ************************************************************************************** */
 const getBranchName = catchAsync(async (req, res) => {
   const aggregateArray = [
     {
@@ -298,6 +312,7 @@ const getBranchName = catchAsync(async (req, res) => {
     Record,
   });
 });
+
 module.exports = {
   addBranch,
   getBranch,

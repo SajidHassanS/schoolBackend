@@ -188,22 +188,18 @@ router.put(
 //===================      noticeboard  route         ==============//
 
 router.get(
-  "/getNoticeboard/:query",
+  "/getNotice/:query",
   authenticate,
   noticeboardController.getNoticeboard
 );
-router.post(
-  "/addNoticeboard",
-  authenticate,
-  noticeboardController.addNoticeboard
-);
+router.post("/addNotice", authenticate, noticeboardController.addNoticeboard);
 router.put(
-  "/editNoticeboard",
+  "/updateNotice",
   authenticate,
-  noticeboardController.editNoticeboard
+  noticeboardController.updateNoticeBoard
 );
-router.put(
-  "/deleteNoticeboard",
+router.delete(
+  "/deleteNotice",
   authenticate,
   noticeboardController.deleteNoticeboard
 );

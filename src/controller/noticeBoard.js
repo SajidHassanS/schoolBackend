@@ -28,13 +28,13 @@ const fetchNoticeBoardListAndCard = async (
             $group: {
               _id: null,
               studentNotices: {
-                $sum: { $cond: [{ $eq: ["$role", "student"] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ["$type", "student"] }, 1, 0] },
               },
               teacherNotices: {
-                $sum: { $cond: [{ $eq: ["$role", "teacher"] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ["$type", "teacher"] }, 1, 0] },
               },
               staffNotices: {
-                $sum: { $cond: [{ $eq: ["$role", "staff"] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ["$type", "staff"] }, 1, 0] },
               },
               total: {
                 $sum: 1,
@@ -46,14 +46,36 @@ const fetchNoticeBoardListAndCard = async (
         tableData: [
           { $match: tableDataCondition },
 
+          // get branch details
           {
             $lookup: {
               from: "users",
-              let: { uid: "$createdBy" }, // second table variable which is used to compare
+              let: { branchId: "$branchId" },
               pipeline: [
                 {
                   $match: {
-                    $expr: { $eq: ["$_id", "$$uid"] },
+                    $expr: { $eq: ["$_id", "$$branchId"] },
+                  },
+                },
+                {
+                  $project: {
+                    branchName: 1,
+                  },
+                },
+              ],
+              as: "branchInfo",
+            },
+          },
+
+          // get created by details
+          {
+            $lookup: {
+              from: "users",
+              let: { createdBy: "$createdBy" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", "$$createdBy"] },
                   },
                 },
                 {
@@ -68,13 +90,15 @@ const fetchNoticeBoardListAndCard = async (
           },
           {
             $project: {
-              noticeBoardId: 1,
+              sNo: 1,
               fullName: { $arrayElemAt: ["$noticeCreatorInfo.fullName", 0] },
+              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               createdByRole: {
                 $arrayElemAt: ["$noticeCreatorInfo.fullName", 0],
               },
               role: 1,
-              noticeTitle: 1,
+              title: 1,
+              type: 1,
               message: 1,
               createdAt: 1,
             },
@@ -94,7 +118,7 @@ const fetchNoticeBoardListAndCard = async (
 /* ************************************************************************************** */
 // Get noticeboard record
 /* ************************************************************************************** */
-const getNoticeboard= catchAsync(async (req, res) => {
+const getNoticeboard = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   const user = req.user;
   let tableDataCondition = {};
@@ -162,7 +186,7 @@ const getNoticeboard= catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Add noticeboard record
 /* ************************************************************************************** */
-const addNoticeboard= catchAsync(async (req, res) => {
+const addNoticeboard = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   data.createdBy = user._id; // assigning user id to createdBy
@@ -199,17 +223,24 @@ const addNoticeboard= catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Edit noticeboard record
 /* ************************************************************************************** */
-const editNoticeboard = catchAsync(async (req, res) => {
+const updateNoticeBoard = catchAsync(async (req, res) => {
   const data = req.body;
+  const userId = req.user._id;
+  let cardsCondition = {};
+  cardsCondition.createdBy = userId;
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },
     data
   );
-  const RecordAll = await fetchNoticeBoardListAndCard({ _id: Record._id },{},{});
+  const RecordAll = await fetchNoticeBoardListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
   res.send({
     status: constant.SUCCESS,
-    message: "NoticeBoard Record Updated Successfully",
+    message: "NoticeBoard record updated successfully",
     Record: RecordAll[0],
   });
 });
@@ -217,19 +248,16 @@ const editNoticeboard = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // Delete noticeboard record
 /* ************************************************************************************** */
-const deleteNoticeboard= catchAsync(async (req, res) => {
+const deleteNoticeboard = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
-  const RecordAll = await fetchNoticeBoardListAndCard({}, {}, {});
-
   res.send({
     status: constant.SUCCESS,
-    message: "Notice deleted successfully",
+    message: "Noticeboard record deleted successfully",
     Record: {
-      deletedRecordId: { _id: data._id },
-      cards: RecordAll[0].cards,
+      tableData: [{ _id: data._id }],
     },
   });
 });
@@ -237,6 +265,6 @@ const deleteNoticeboard= catchAsync(async (req, res) => {
 module.exports = {
   getNoticeboard,
   addNoticeboard,
-  editNoticeboard,
+  updateNoticeBoard,
   deleteNoticeboard,
 };

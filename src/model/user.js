@@ -14,7 +14,7 @@ const User = new mongoose.Schema(
   {
     sNo: {
       type: Number,
-      default: 0,
+      default: 1,
     },
     teacherId: {
       type: Number,

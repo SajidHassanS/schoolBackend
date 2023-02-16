@@ -10,10 +10,9 @@ const NoticeBoard = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
     },
-    noticeTitle: {
+    title: {
       type: String,
     },
-
     message: {
       type: String,
       trim: true,
@@ -23,9 +22,9 @@ const NoticeBoard = new mongoose.Schema(
       enum: ["active", "delete"],
       default: "active",
     },
-    role: {
+    type: {
       type: String,
-      enum: ["student", "teacher", "staff", "all"],
+      enum: ["student", "teacher", "staff"],
     },
     createdAt: {
       type: Date,
