@@ -5,7 +5,7 @@ const { autoIncrement } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
 const TableName = "Class";
-const autoIncrementId = "sNo"; // id is auto incremented
+const autoIncrementId = "classId"; // id is auto incremented
 
 /* ************************************************************************************** */
 /*                              fetch class list and cards          g                    */
@@ -94,7 +94,7 @@ const fetchClassListAndCard = async (
           {
             $project: {
               _id: 1,
-              sNo: 1,
+              classId: 1,
               branchName: { $arrayElemAt: ["$branchInfo.fullName", 0] },
               sectionName: { $arrayElemAt: ["$sectionInfo.sectionName", 0] },
               className: 1,
@@ -119,9 +119,10 @@ const fetchClassListAndCard = async (
 const getClass = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
-  const user = req.user;
+  const userId = req.user._id;
   let tableDataCondition = {};
   let cardsCondition = {};
+
   // Variables For Pagination
   let limit = parseInt(data.limit);
   let skipPage = limit * (parseInt(data.pageNumber) - 1);
@@ -130,6 +131,8 @@ const getClass = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
+  tableDataCondition.branchId = userId;
+  cardsCondition.branchId = userId;
   // search with branch name, class name and id (serial number)
   if (data.name) {
     tableDataCondition = {
@@ -184,27 +187,21 @@ const getClass = catchAsync(async (req, res) => {
 /*                               add class record                                       */
 /* ************************************************************************************** */
 const addClass = catchAsync(async (req, res) => {
-  const data = res.body;
+  const data = req.body;
   const user = req.user;
   const userId = user._id;
 
-  // check if class record already exists with same name
   const isAlreadyExist = await generalService.getRecord("Class", {
     className: data.className,
+    branchId: userId,
   });
-
   if (isAlreadyExist && isAlreadyExist.length > 0) {
     res.send({
       status: constant.ERROR,
       message: "Class name already exists",
     });
-  }
-  // if teacher is added by super admin then assigning his id as branch id
-  else {
-    if (user.role === "superAdmin") {
-      data.branchId = userId;
-    }
-    createdBy = userId;
+  } else {
+    data.createdBy = userId;
     data[autoIncrementId] = await autoIncrement(TableName, autoIncrementId);
     const Record = await generalService.addRecord(TableName, data);
     const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {}, {});
@@ -221,9 +218,13 @@ const addClass = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateClass = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
+  const userId = req.user._id;
+  data.updatedAt = Date.now();
+  data.updatedBy = userId;
   const isAlreadyExist = await generalService.getRecord("Class", {
-    email: data.email,
+    className: data.className,
+    branchId: userId,
+    sectionId: data.sectionId,
   });
   if (isAlreadyExist && isAlreadyExist.length > 0) {
     res.send({
@@ -246,6 +247,34 @@ const updateClass = catchAsync(async (req, res) => {
   }
 });
 
+/* ************************************************************************************** */
+/*                               update class status record                                       */
+/* ************************************************************************************** */
+const updateClassStatus = catchAsync(async (req, res) => {
+  const data = req.body;
+  const userId = req.user._id;
+
+  let cardsCondition = {};
+  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
+
+  data.updatedAt = Date.now();
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    data
+  );
+  const RecordAll = await fetchClassListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
+
+  res.send({
+    status: constant.SUCCESS,
+    message: "Class status updated successfully",
+    Record: RecordAll[0],
+  });
+});
 /* ************************************************************************************** */
 /*                               delete class record                                     */
 /* ************************************************************************************** */
@@ -295,4 +324,5 @@ module.exports = {
   getClass,
   updateClass,
   deleteClass,
+  updateClassStatus,
 };

@@ -30,7 +30,7 @@ const leaveSettingJoi = require("./utils/validation/leaveSetting");
 //===================       Auth Route       ==============//
 router.post("/signUp", authJoiValidation.signUp, authController.signUp);
 router.post("/login", authController.signIn);
-router.get("/getProfile", authController.getProfile);
+router.get("/getProfile", authenticate, authController.getProfile);
 router.put("/updateProfile", authenticate, authController.updateProfile);
 router.put("/changePassword", authenticate, authController.changePassword);
 router.post("/forgetPassword", authController.forgetPassword);
@@ -97,6 +97,12 @@ router.put(
   classController.updateClass
 );
 router.put(
+  "/updateClassStatus",
+  classJoi.updateStatusValidation,
+  authenticate,
+  classController.updateClassStatus
+);
+router.put(
   "/deleteClass",
   classJoi.deleteValidation,
   authenticate,
@@ -106,7 +112,7 @@ router.put(
 router.get("/getTeacher/:query", authenticate, teacherController.getTeacher);
 router.post(
   "/addTeacher",
-  teacherJoi.addValidation,
+  // teacherJoi.addValidation,
   authenticate,
   teacherController.addTeacher
 );
@@ -166,23 +172,18 @@ router.put(
 );
 
 //===================      tax Rate Route         ==============//
-router.get("/getTaxRate/:query", authenticate, taxRateController.getTaxRate);
-router.post(
-  "/addTaxRate",
-  authenticate,
-  taxRateJoi.addValidation,
-  taxRateController.addTaxRate
-);
+router.get("/getTaxRate/:query", taxRateController.getTaxRate);
+router.post("/addTaxRate", authenticate, taxRateController.addTaxRate);
 router.put(
   "/updateTaxRate",
   authenticate,
-  taxRateJoi.updateValidation,
+
   taxRateController.updateTaxRate
 );
 router.put(
   "/deleteTaxRate",
   authenticate,
-  taxRateJoi.deleteValidation,
+
   taxRateController.deleteTaxRate
 );
 //===================      noticeboard  route         ==============//

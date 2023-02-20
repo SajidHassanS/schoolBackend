@@ -1,16 +1,17 @@
-"use strict"
+"use strict";
 const mongoose = require("mongoose");
 var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const Class = new mongoose.Schema(
   {
-    sNo: {
+    classId: {
       type: Number,
+      default: 1,
     },
     branchId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch",
+      ref: "User",
     },
-    sectionId:{
+    sectionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Section",
     },
@@ -30,6 +31,10 @@ const Class = new mongoose.Schema(
       type: Date,
     },
     createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },

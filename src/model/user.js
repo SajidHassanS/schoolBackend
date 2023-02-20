@@ -18,6 +18,7 @@ const User = new mongoose.Schema(
     },
     teacherId: {
       type: Number,
+      default: 1,
     },
     studentId: {
       type: Number,

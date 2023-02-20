@@ -79,7 +79,7 @@ const fetchTeacherListAndCard = async (
 /* ************************************************************************************** */
 /*                              fetch teacher record                                      */
 /* ************************************************************************************** */
-const getTeacher= catchAsync(async (req, res) => {
+const getTeacher = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const user = req.user;
@@ -153,7 +153,7 @@ const getTeacher= catchAsync(async (req, res) => {
 /*                              add teacher record                                       */
 /* ************************************************************************************** */
 const addTeacher = catchAsync(async (req, res) => {
-  const data = res.body;
+  const data = req.body;
   const user = req.user;
   const userId = user._id;
   let cardsCondition = {};
@@ -199,7 +199,7 @@ const addTeacher = catchAsync(async (req, res) => {
     };
 
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchBranchListAndCard(
+    const RecordAll = await fetchTeacherListAndCard(
       { _id: Record._id },
       cardsCondition,
       {}
@@ -215,7 +215,7 @@ const addTeacher = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               edit teacher record                                      */
 /* ************************************************************************************** */
-const updateTeacher= catchAsync(async (req, res) => {
+const updateTeacher = catchAsync(async (req, res) => {
   const data = req.body;
   let cardsCondition = {};
   const user = req.user;

@@ -23,8 +23,8 @@ let userFieldSendFrontEnd = [
 
 const signIn = catchAsync(async (req, res, next) => {
   const data = req.body;
-  console.log("=====",data);
-    passport.authenticate("local", {}, (err, user, info) => {
+  console.log("=====", data);
+  passport.authenticate("local", {}, (err, user, info) => {
     if (err || !user) {
       res.status(400).send({
         status: constant.ERROR,
@@ -111,28 +111,24 @@ const signUp = catchAsync(async (req, res) => {
 });
 
 const getProfile = catchAsync(async (req, res) => {
-  const user = req.user;
-
   let aggregateArr = [
-    { $match: { _id: user._id } },
+    { $match: { _id: req.user._id } },
     {
       $project: {
         fullName: 1,
         email: 1,
         address: 1,
+        role: 1,
         phoneNumber: 1,
         profileImageUrl: 1,
       },
     },
   ];
   let Record = await generalService.getRecordAggregate(TableName, aggregateArr);
-  // if (Record[0].profileImageUrl[0].imageUrl) {
-  //   Record[0].profileImageUrl = Record[0].profileImageUrl[0].imageUrl;
-  // }
   console.log("========", res.get("x-auth"));
   res.send({
     status: constant.SUCCESS,
-    message: "Record updated Successfully",
+    message: "Profile record fetch successfully",
     Record: Record[0],
   });
 });
@@ -149,6 +145,7 @@ const getSetting = catchAsync(async (req, res) => {
     Record: Record[0],
   });
 });
+
 const getUserDetail = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   let condition = { invitationGuid: data.token };
@@ -172,6 +169,7 @@ const getUserDetail = catchAsync(async (req, res) => {
       Record: _.pick(Record[0], ["fullName", "email", "phoneNumber", "_id"]),
     });
 });
+
 const updateProfile = catchAsync(async (req, res, next) => {
   const data = req.body;
   const user = req.user;
@@ -185,15 +183,14 @@ const updateProfile = catchAsync(async (req, res, next) => {
     { $match: { _id: Record._id } },
     {
       $project: {
-        fullName: 1,
+        _id: 1,
         email: 1,
-        address: 1,
+        fullName: 1,
         phoneNumber: 1,
-        password: 1,
-        biography: 1,
+        role: 1,
+        status: 1,
+        createdAt: 1,
         profileImageUrl: 1,
-        membership: { $arrayElemAt: ["$packageDetail.packageName", 0] },
-        type: { $arrayElemAt: ["$packageDetail.packageType", 0] },
       },
     },
   ];
@@ -211,7 +208,6 @@ const updateProfile = catchAsync(async (req, res, next) => {
 const changePassword = catchAsync(async (req, res) => {
   const user = req.user;
   let obj = req.body;
-
   const password = await bcrypt.hash(obj.password, saltRounds);
 
   const checkPassword = await generalService.getRecord(TableName, {

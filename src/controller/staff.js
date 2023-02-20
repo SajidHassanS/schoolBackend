@@ -245,6 +245,9 @@ const deleteStaff= catchAsync(async (req, res) => {
   });
 });
 
+
+
+
 module.exports = {
   addStaff,
   getStaff,
