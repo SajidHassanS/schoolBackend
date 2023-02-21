@@ -18,7 +18,7 @@ const User = new mongoose.Schema(
     },
     teacherId: {
       type: Number,
-      default: 1,
+      default: 0,
     },
     studentId: {
       type: Number,
@@ -83,6 +83,12 @@ const User = new mongoose.Schema(
     },
     personalInformation: {
       type: Object,
+    },
+    educationInformation: {
+      type: Array,
+    },
+    experienceInformation: {
+      type: Array,
     },
     salaryInformation: {
       type: Object,

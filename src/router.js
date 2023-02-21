@@ -1,7 +1,20 @@
 const Router = require("express").Router;
 const router = new Router();
 const { authenticate } = require("./middleware/authenticate");
+const uploadGoogleFile = require("./utils/googleDriveFileUploader");
+const fsExtra = require("fs-extra");
+const multer = require("multer");
+const path = require("path");
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./tmp/csv/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); //Appending extension
+  },
+});
 
+const uploadCSV = multer({ storage: storage });
 // ===================      All Controllers   ==================//
 const dashboardController = require("./controller/dashboard");
 const authController = require("./controller/auth");
@@ -110,9 +123,14 @@ router.put(
 );
 //===================      teacher Route         ==============//
 router.get("/getTeacher/:query", authenticate, teacherController.getTeacher);
+router.get(
+  "/getTeacherDetailById/:query",
+  authenticate,
+  teacherController.getTeacherDetailById
+);
 router.post(
   "/addTeacher",
-  // teacherJoi.addValidation,
+  teacherJoi.addValidation,
   authenticate,
   teacherController.addTeacher
 );
@@ -121,6 +139,12 @@ router.put(
   teacherJoi.updateValidation,
   authenticate,
   teacherController.updateTeacher
+);
+router.put(
+  "/updateTeacherStatus",
+  teacherJoi.updateStatusValidation,
+  authenticate,
+  teacherController.updateTeacherStatus
 );
 router.put(
   "/deleteTeacher",
@@ -251,4 +275,27 @@ router.put(
   sectionController.deleteSection
 );
 
+router.post(
+  "/uploadFileToGoogleDrive",
+  uploadCSV.single("file"),
+  async (req, res) => {
+    try {
+      let p = path.join(__dirname, `../${req.file.path}`);
+      let filesPath = path.join(__dirname, `../tmp/csv`);
+      let link = await uploadGoogleFile.uploadFile(p);
+      let url = link.url;
+      let fileId = link.fileId;
+      // Empty directory after uploading files
+      fsExtra.emptyDirSync(filesPath);
+      res.status(200).send({
+        status: "SUCCESS",
+        message: "File uploaded successfully",
+        url: url,
+        fileId: fileId,
+      });
+    } catch (f) {
+      res.send(f.message);
+    }
+  }
+);
 module.exports = router;

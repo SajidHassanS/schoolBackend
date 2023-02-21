@@ -19,6 +19,11 @@ const fetchTeacherListAndCard = async (
   let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
   const aggregateArray = [
     {
+      $match: {
+        role: "teacher",
+      },
+    },
+    {
       $facet: {
         total: [{ $match: cardsCondition }, { $count: "total" }],
         cards: [
@@ -47,15 +52,37 @@ const fetchTeacherListAndCard = async (
         tableData: [
           // Condition For Table Data
           { $match: tableDataCondition },
-
+          // lookup to get branch name by id
+          {
+            $lookup: {
+              from: "users",
+              let: { branchId: "$branchId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", { $toObjectId: "$$branchId" }] },
+                  },
+                },
+                {
+                  $project: {
+                    branchName: 1,
+                  },
+                },
+              ],
+              as: "branchInfo",
+            },
+          },
           {
             $project: {
               _id: 1,
               fullName: 1,
               email: 1,
+              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               phoneNumber: 1,
+              branchId: 1,
               address: 1,
               birthday: 1,
+              designation: 1,
               gender: 1,
               role: 1,
               status: 1,
@@ -70,6 +97,65 @@ const fetchTeacherListAndCard = async (
           { $skip: skipPage },
           { $limit: limit },
         ],
+      },
+    },
+  ];
+  return await generalService.getRecordAggregate(TableName, aggregateArray);
+};
+
+/* ************************************************************************************** */
+// get teacher details by his id
+/* ************************************************************************************** */
+
+const getDetailsById = async (_id, branchId) => {
+  const aggregateArray = [
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(_id),
+        role: "teacher",
+      },
+    },
+    // lookup to get branch name by id
+    {
+      $lookup: {
+        from: "users",
+        let: { branchId: branchId },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$_id", { $toObjectId: "$$branchId" }] },
+            },
+          },
+          {
+            $project: {
+              branchName: 1,
+            },
+          },
+        ],
+        as: "branchInfo",
+      },
+    },
+
+    {
+      $project: {
+        _id: 1,
+        teacherId: 1,
+        branchId: 1,
+        designation: 1,
+        fullName: 1,
+        email: 1,
+        phoneNumber: 1,
+        branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
+        address: 1,
+        birthday: 1,
+        gender: 1,
+        role: 1,
+        personalInformation: 1,
+        emergencyContact: 1,
+        salaryInformation: 1,
+        experienceInformation: 1,
+        educationInformation: 1,
+        status: 1,
       },
     },
   ];
@@ -156,7 +242,6 @@ const addTeacher = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   const userId = user._id;
-  let cardsCondition = {};
   const isAlreadyExist = await generalService.getRecord("User", {
     email: data.email,
   });
@@ -166,48 +251,18 @@ const addTeacher = catchAsync(async (req, res) => {
       message: "Email already exists",
     });
   } else {
-    if (user.role === "superAdmin") {
-      // if teacher is added by super admin them
-      data.branchId = userId;
-    }
-
-    createdBy = userId;
+    data.createdBy = userId;
     data.role = "teacher";
     data[incrementalId] = await autoIncrement(TableName, incrementalId);
-    data.emergencyContact = {
-      // information about the emergency contact details
-
-      emergencyContactName: "",
-      emergencyContactNumber: "",
-      emergencyContactRelationship: "",
-    };
-
-    data.personalInformation = {
-      // personal information about teacher
-
-      nationality: "",
-      religion: "",
-      martialStatus: "",
-    };
-
-    data.salaryInformation = {
-      // salary information about teacher
-    };
-
-    data.deductionInformation = {
-      // deduction information about teacher
-    };
 
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchTeacherListAndCard(
-      { _id: Record._id },
-      cardsCondition,
-      {}
-    );
+
+    // get teacher details along side with ranch name
+    const TeacherRecord = await getDetailsById(Record._id, Record.branchId);
     res.send({
       status: constant.SUCCESS,
       message: "Teacher added successfully",
-      Record: RecordAll[0],
+      Record: TeacherRecord[0],
     });
   }
 });
@@ -217,53 +272,92 @@ const addTeacher = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateTeacher = catchAsync(async (req, res) => {
   const data = req.body;
-  let cardsCondition = {};
   const user = req.user;
   const userId = user._id;
-  data.updatedAt = userId;
-  const isAlreadyExist = await generalService.getRecord("User", {
-    email: data.email,
+  data.updatedBy = userId;
+  data.updatedAt = Date.now();
+
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    data
+  );
+
+  // get teacher details along side with ranch name
+  const TeacherRecord = await getDetailsById(data._id, data.branchId);
+  res.send({
+    status: constant.SUCCESS,
+    message: "Teacher record updated successfully",
+    Record: TeacherRecord[0],
   });
-  if (isAlreadyExist && isAlreadyExist.length > 0) {
-    res.send({
-      status: constant.ERROR,
-      message: "Email already exists",
-    });
-  } else {
-    const Record = await generalService.findAndModifyRecord(
-      TableName,
-      { _id: data._id },
-      data
-    );
-    const RecordAll = await fetchTeacherListAndCard(
-      { _id: Record._id },
-      cardsCondition,
-      {}
-    );
-    res.send({
-      status: constant.SUCCESS,
-      message: "Teacher record updated successfully",
-      Record: RecordAll[0],
-    });
-  }
 });
 
 /* ************************************************************************************** */
-/*                               delete teacher record                                    */
+/*                               update branch status record                                       */
+/* ************************************************************************************** */
+const updateTeacherStatus = catchAsync(async (req, res) => {
+  const data = req.body;
+  const userId = req.user._id;
+
+  let cardsCondition = {};
+  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
+
+  data.updatedAt = Date.now();
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    data
+  );
+  const RecordAll = await fetchTeacherListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
+
+  res.send({
+    status: constant.SUCCESS,
+    message: "Teacher status updated successfully",
+    Record: RecordAll[0],
+  });
+});
+
+/* ************************************************************************************** */
+/*                               delete teacher record                                     */
 /* ************************************************************************************** */
 const deleteTeacher = catchAsync(async (req, res) => {
   const data = req.body;
-  const Record = await generalService.deleteRecord(TableName, {
-    _id: data._id,
-  });
-  const RecordAll = await fetchTeacherListAndCard({}, {}, {});
+  const userId = req.user._id;
+  let cardsCondition = {};
+  cardsCondition.branchId = new mongoose.Types.ObjectId(userId);
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    { status: "delete" }
+  );
+  const RecordAll = await fetchTeacherListAndCard(
+    { _id: Record._id },
+    cardsCondition,
+    {}
+  );
   res.send({
     status: constant.SUCCESS,
     message: "Teacher deleted successfully",
     Record: {
-      deletedRecordId: { _id: data._id },
+      tableData: [{ _id: data._id }],
       cards: RecordAll[0].cards,
+      total: RecordAll[0].total,
     },
+  });
+});
+
+const getTeacherDetailById = catchAsync(async (req, res) => {
+  const { _id, branchId } = JSON.parse(req.params.query);
+
+  const TeacherRecord = await getDetailsById(_id, branchId);
+  res.send({
+    status: constant.SUCCESS,
+    message: "Teacher details fetch successfully",
+    Record: TeacherRecord[0],
   });
 });
 
@@ -272,4 +366,6 @@ module.exports = {
   getTeacher,
   updateTeacher,
   deleteTeacher,
+  getTeacherDetailById,
+  updateTeacherStatus,
 };
