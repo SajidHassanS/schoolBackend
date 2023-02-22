@@ -97,6 +97,7 @@ router.put(
 
 //===================      class Route         ==============//
 router.get("/getClass/:query", authenticate, classController.getClass);
+router.get("/getClassName/:query", authenticate, classController.getClassName);
 router.post(
   "/addClass",
   classJoi.addValidation,

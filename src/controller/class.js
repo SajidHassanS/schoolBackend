@@ -119,6 +119,7 @@ const fetchClassListAndCard = async (
 const getClass = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
+  console.log(data);
   const userId = req.user._id;
   let tableDataCondition = {};
   let cardsCondition = {};
@@ -131,8 +132,9 @@ const getClass = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  tableDataCondition.branchId = userId;
-  cardsCondition.branchId = userId;
+  // tableDataCondition.branchId = userId;
+  // cardsCondition.branchId = userId;
+
   // search with branch name, class name and id (serial number)
   if (data.name) {
     tableDataCondition = {
@@ -190,7 +192,7 @@ const addClass = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   const userId = user._id;
-
+  console.log(data);
   const isAlreadyExist = await generalService.getRecord("Class", {
     className: data.className,
     branchId: userId,
@@ -296,15 +298,10 @@ const deleteClass = catchAsync(async (req, res) => {
 
 const getClassName = catchAsync(async (req, res) => {
   const aggregateArray = [
-    // {
-    //   $match: {
-    //     role: "principal",
-    //   },
-    // },
     {
       $project: {
         _id: 1,
-        fullName: 1,
+        className: 1,
       },
     },
   ];
@@ -314,7 +311,7 @@ const getClassName = catchAsync(async (req, res) => {
   );
   res.send({
     status: constant.SUCCESS,
-    message: "Branch name record successfully",
+    message: "Class name record successfully",
     Record,
   });
 });
@@ -324,5 +321,6 @@ module.exports = {
   getClass,
   updateClass,
   deleteClass,
+  getClassName,
   updateClassStatus,
 };

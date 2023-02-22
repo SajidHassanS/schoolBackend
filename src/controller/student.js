@@ -19,6 +19,14 @@ const fetchStudentListAndCard = async (
   let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
   const aggregateArray = [
     {
+      $match: {
+        role: "student",
+        status: {
+          $ne: "delete",
+        },
+      },
+    },
+    {
       $facet: {
         total: [{ $match: cardsCondition }, { $count: "total" }],
 
@@ -145,8 +153,9 @@ const getStudent = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                              add student record                                       */
 /* ************************************************************************************** */
-const addStudent= catchAsync(async (req, res) => {
+const addStudent = catchAsync(async (req, res) => {
   const data = res.body;
+  console.log(data);
   const user = req.user;
   const userId = user._id;
 
@@ -162,32 +171,12 @@ const addStudent= catchAsync(async (req, res) => {
     createdBy = userId;
     data.role = "student";
     data[incrementalId] = await autoIncrement(TableName, incrementalId);
-    data.emergencyContact = {
-      // information about the emergency contact details
-
-      emergencyContactName: "",
-      emergencyContactNumber: "",
-      emergencyContactRelationship: "",
-    };
-
-    data.personalInformation = {
-      // personal information about student
-
-      nationality: "",
-      religion: "",
-      martialStatus: "",
-    };
-
-    data.deductionInformation = {
-      // deduction information about student
-    };
 
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchBranchListAndCard({ _id: Record._id }, {}, {});
     res.send({
       status: constant.SUCCESS,
       message: "Student added successfully",
-      Record: RecordAll[0],
+      Record,
     });
   }
 });
@@ -230,7 +219,7 @@ const updateStudent = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 /*                               delete student record                                    */
 /* ************************************************************************************** */
-const deleteStudent= catchAsync(async (req, res) => {
+const deleteStudent = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,

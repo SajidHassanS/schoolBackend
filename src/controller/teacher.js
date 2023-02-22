@@ -21,6 +21,9 @@ const fetchTeacherListAndCard = async (
     {
       $match: {
         role: "teacher",
+        status: {
+          $ne: "delete",
+        },
       },
     },
     {
@@ -89,6 +92,8 @@ const fetchTeacherListAndCard = async (
               emergencyContact: 1,
               personalInformation: 1,
               salaryInformation: 1,
+              experienceInformation: 1,
+              educationInformation: 1,
             },
           },
           {
@@ -168,7 +173,8 @@ const getDetailsById = async (_id, branchId) => {
 const getTeacher = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
-  const user = req.user;
+  const userId = req.user._id;
+  console.log(userId);
   let tableDataCondition = {};
   let cardsCondition = {};
   // Variables For Pagination
@@ -179,11 +185,8 @@ const getTeacher = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  // Condition If User Is principal
-  if (user.role === "principal") {
-    tableDataCondition.assignTo = new mongoose.Types.ObjectId(user._id);
-    cardsCondition.assignTo = new mongoose.Types.ObjectId(user._id);
-  }
+  tableDataCondition.createdBy = userId;
+  cardsCondition.createdBy = userId;
 
   // Search with teacher name or teacher id
   if (data.name) {
@@ -303,6 +306,7 @@ const updateTeacherStatus = catchAsync(async (req, res) => {
   cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
 
   data.updatedAt = Date.now();
+  data.updatedBy = userId;
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },
