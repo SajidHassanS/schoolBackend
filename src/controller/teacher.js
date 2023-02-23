@@ -1,171 +1,15 @@
 const constant = require("../utils/constant"),
   generalService = require("../services/generalOperation");
 const catchAsync = require("../utils/catchAsync");
-const { autoIncrement } = require("../utils/commonFunctions");
+const {
+  autoIncrement,
+  fetchTableDataListAndCard,
+  getDetailsById,
+} = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
 const TableName = "User";
 const incrementalId = "teacherId"; // id is auto incremented
-
-/* ************************************************************************************** */
-/*                              fetch teacher list and cards                              */
-/* ************************************************************************************** */
-const fetchTeacherListAndCard = async (
-  tableDataCondition,
-  cardsCondition,
-  paginationCondition
-) => {
-  let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
-  let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
-  const aggregateArray = [
-    {
-      $match: {
-        role: "teacher",
-        status: {
-          $ne: "delete",
-        },
-      },
-    },
-    {
-      $facet: {
-        total: [{ $match: cardsCondition }, { $count: "total" }],
-        cards: [
-          // Condition For Cards
-          { $match: cardsCondition },
-          {
-            $group: {
-              _id: null,
-              totalActive: {
-                $sum: {
-                  $cond: [{ $eq: ["$status", "active"] }, 1, 0],
-                },
-              },
-              totalBlock: {
-                $sum: {
-                  $cond: [{ $eq: ["$status", "block"] }, 1, 0],
-                },
-              },
-              total: {
-                $sum: 1,
-              },
-            },
-          },
-        ],
-
-        tableData: [
-          // Condition For Table Data
-          { $match: tableDataCondition },
-          // lookup to get branch name by id
-          {
-            $lookup: {
-              from: "users",
-              let: { branchId: "$branchId" },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: { $eq: ["$_id", { $toObjectId: "$$branchId" }] },
-                  },
-                },
-                {
-                  $project: {
-                    branchName: 1,
-                  },
-                },
-              ],
-              as: "branchInfo",
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              fullName: 1,
-              email: 1,
-              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
-              phoneNumber: 1,
-              branchId: 1,
-              address: 1,
-              birthday: 1,
-              designation: 1,
-              gender: 1,
-              role: 1,
-              status: 1,
-              emergencyContact: 1,
-              personalInformation: 1,
-              salaryInformation: 1,
-              experienceInformation: 1,
-              educationInformation: 1,
-            },
-          },
-          {
-            $sort: { _id: -1 },
-          },
-          { $skip: skipPage },
-          { $limit: limit },
-        ],
-      },
-    },
-  ];
-  return await generalService.getRecordAggregate(TableName, aggregateArray);
-};
-
-/* ************************************************************************************** */
-// get teacher details by his id
-/* ************************************************************************************** */
-
-const getDetailsById = async (_id, branchId) => {
-  const aggregateArray = [
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(_id),
-        role: "teacher",
-      },
-    },
-    // lookup to get branch name by id
-    {
-      $lookup: {
-        from: "users",
-        let: { branchId: branchId },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ["$_id", { $toObjectId: "$$branchId" }] },
-            },
-          },
-          {
-            $project: {
-              branchName: 1,
-            },
-          },
-        ],
-        as: "branchInfo",
-      },
-    },
-
-    {
-      $project: {
-        _id: 1,
-        teacherId: 1,
-        branchId: 1,
-        designation: 1,
-        fullName: 1,
-        email: 1,
-        phoneNumber: 1,
-        branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
-        address: 1,
-        birthday: 1,
-        gender: 1,
-        role: 1,
-        personalInformation: 1,
-        emergencyContact: 1,
-        salaryInformation: 1,
-        experienceInformation: 1,
-        educationInformation: 1,
-        status: 1,
-      },
-    },
-  ];
-  return await generalService.getRecordAggregate(TableName, aggregateArray);
-};
 
 /* ************************************************************************************** */
 /*                              fetch teacher record                                      */
@@ -174,7 +18,6 @@ const getTeacher = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
   const userId = req.user._id;
-  console.log(userId);
   let tableDataCondition = {};
   let cardsCondition = {};
   // Variables For Pagination
@@ -208,10 +51,11 @@ const getTeacher = catchAsync(async (req, res) => {
     tableDataCondition["status"] = data.value;
   }
 
-  const Record = await fetchTeacherListAndCard(
+  const Record = await fetchTableDataListAndCard(
     tableDataCondition,
     cardsCondition,
-    paginationCondition
+    paginationCondition,
+    "teacher"
   );
 
   // Formatting Data For Pagination
@@ -275,8 +119,7 @@ const addTeacher = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateTeacher = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  const userId = user._id;
+  const userId = req.user._id;
   data.updatedBy = userId;
   data.updatedAt = Date.now();
 
@@ -287,7 +130,11 @@ const updateTeacher = catchAsync(async (req, res) => {
   );
 
   // get teacher details along side with ranch name
-  const TeacherRecord = await getDetailsById(data._id, data.branchId);
+  const TeacherRecord = await getDetailsById(
+    Record._id,
+    Record.branchId,
+    Record.role
+  );
   res.send({
     status: constant.SUCCESS,
     message: "Teacher record updated successfully",
@@ -312,10 +159,11 @@ const updateTeacherStatus = catchAsync(async (req, res) => {
     { _id: data._id },
     data
   );
-  const RecordAll = await fetchTeacherListAndCard(
+  const RecordAll = await fetchTableDataListAndCard(
     { _id: Record._id },
     cardsCondition,
-    {}
+    {},
+    "teacher"
   );
 
   res.send({
@@ -338,10 +186,11 @@ const deleteTeacher = catchAsync(async (req, res) => {
     { _id: data._id },
     { status: "delete" }
   );
-  const RecordAll = await fetchTeacherListAndCard(
+  const RecordAll = await fetchTableDataListAndCard(
     { _id: Record._id },
     cardsCondition,
-    {}
+    {},
+    "teacher"
   );
   res.send({
     status: constant.SUCCESS,
@@ -354,15 +203,24 @@ const deleteTeacher = catchAsync(async (req, res) => {
   });
 });
 
+/* ************************************************************************************** */
+/*                               get teacher details by his id                            */
+/* ************************************************************************************** */
 const getTeacherDetailById = catchAsync(async (req, res) => {
-  const { _id, branchId } = JSON.parse(req.params.query);
-
-  const TeacherRecord = await getDetailsById(_id, branchId);
-  res.send({
-    status: constant.SUCCESS,
-    message: "Teacher details fetch successfully",
-    Record: TeacherRecord[0],
-  });
+  const { _id, branchId, role } = JSON.parse(req.params.query);
+  if (_id && branchId && role) {
+    const TeacherRecord = await getDetailsById(_id, branchId, role);
+    res.send({
+      status: constant.SUCCESS,
+      message: "Teacher details fetch successfully",
+      Record: TeacherRecord[0],
+    });
+  } else {
+    res.send({
+      status: constant.ERROR,
+      message: "Something went wrong while fetching teacher details",
+    });
+  }
 });
 
 module.exports = {

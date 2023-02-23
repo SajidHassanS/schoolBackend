@@ -18,9 +18,11 @@ const User = new mongoose.Schema(
     },
     studentId: {
       type: Number,
+      default: 0,
     },
     staffId: {
       type: Number,
+      default: 0,
     },
     fullName: {
       type: String,

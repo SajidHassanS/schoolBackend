@@ -99,7 +99,6 @@ exports.deleteValidation = function (req, res, next) {
   }
 };
 
-
 exports.updateStatusValidation = function (req, res, next) {
   const data = req.body;
   let objectValidateScheme = joi.object().keys({

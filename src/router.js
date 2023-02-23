@@ -126,6 +126,7 @@ router.put(
 router.get("/getTeacher/:query", authenticate, teacherController.getTeacher);
 router.get(
   "/getTeacherDetailById/:query",
+  // teacherJoi.getDetailsValidation,
   authenticate,
   teacherController.getTeacherDetailById
 );
@@ -156,6 +157,11 @@ router.put(
 
 //===================      student Route         ==============//
 router.get("/getStudent/:query", authenticate, studentController.getStudent);
+router.get(
+  "/getStudentDetailById/:query",
+  authenticate,
+  studentController.getStudentDetailById
+);
 router.post(
   "/addStudent",
   studentJoi.addValidation,
@@ -167,6 +173,12 @@ router.put(
   studentJoi.updateValidation,
   authenticate,
   studentController.updateStudent
+);
+router.put(
+  "/updateStudentStatus",
+  studentJoi.updateStatusValidation,
+  authenticate,
+  studentController.updateStudentStatus
 );
 router.put(
   "/deleteStudent",
@@ -188,6 +200,12 @@ router.put(
   staffJoi.updateValidation,
   authenticate,
   staffController.updateStaff
+);
+router.put(
+  "/updateStaffStatus",
+  staffJoi.updateStatusValidation,
+  authenticate,
+  staffController.updateStaffStatus
 );
 router.put(
   "/deleteStaff",
