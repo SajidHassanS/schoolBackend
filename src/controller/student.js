@@ -1,15 +1,166 @@
 const constant = require("../utils/constant"),
   generalService = require("../services/generalOperation");
 const catchAsync = require("../utils/catchAsync");
-const {
-  autoIncrement,
-  getDetailsById,
-  fetchTableDataListAndCard,
-} = require("../utils/commonFunctions");
+const { autoIncrement, getDetailsById } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
 const TableName = "User";
 const incrementalId = "studentId"; // id is auto incremented
+
+const fetchTableDataListAndCard = async (
+  tableDataCondition,
+  cardsCondition,
+  paginationCondition,
+  searchCondition
+) => {
+  let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
+  let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
+  const aggregateArray = [
+    {
+      $match: {
+        role: "student",
+        status: {
+          $ne: "delete",
+        },
+      },
+    },
+    {
+      $facet: {
+        total: [{ $match: cardsCondition }, { $count: "total" }],
+
+        cards: [
+          { $match: cardsCondition },
+          {
+            $group: {
+              _id: null,
+              totalActive: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "active"] }, 1, 0],
+                },
+              },
+              totalBlock: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "block"] }, 1, 0],
+                },
+              },
+              total: {
+                $sum: 1,
+              },
+            },
+          },
+        ],
+
+        tableData: [
+          { $match: tableDataCondition },
+          // lookup to get branch name by id
+          {
+            $lookup: {
+              from: "users",
+              let: { branchId: "$branchId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", { $toObjectId: "$$branchId" }] },
+                  },
+                },
+                {
+                  $project: {
+                    branchName: 1,
+                  },
+                },
+              ],
+              as: "branchInfo",
+            },
+          },
+
+          // lookup to get class name and class id
+          {
+            $lookup: {
+              from: "classes",
+              let: { classId: "$classId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", { $toObjectId: "$$classId" }] },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    className: 1,
+                  },
+                },
+              ],
+              as: "classInfo",
+            },
+          },
+
+          // lookup to get section name and section id
+
+          {
+            $lookup: {
+              from: "sections",
+              let: { sectionId: "$sectionId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", { $toObjectId: "$$sectionId" }] },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    sectionName: 1,
+                  },
+                },
+              ],
+              as: "sectionInfo",
+            },
+          },
+
+          {
+            $project: {
+              _id: 1,
+              fullName: 1,
+              studentId: 1,
+              email: 1,
+              phoneNumber: 1,
+              branchId: 1,
+              address: 1,
+              birthday: 1,
+              designation: 1,
+              admissionDate: 1,
+              gender: 1,
+              role: 1,
+              joiningDate: 1,
+              status: 1,
+              emergencyContact: 1,
+              personalInformation: 1,
+              salaryInformation: 1,
+              experienceInformation: 1,
+              educationInformation: 1,
+              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
+              sectionName: { $arrayElemAt: ["$sectionInfo.sectionName", 0] },
+              sectionId: { $arrayElemAt: ["$sectionInfo._id", 0] },
+              className: { $arrayElemAt: ["$classInfo.className", 0] },
+              classId: { $arrayElemAt: ["$classInfo._id", 0] },
+            },
+          },
+          {
+            $sort: { _id: -1 },
+          },
+          // search from project
+          {
+            $match: searchCondition,
+          },
+          { $skip: skipPage },
+          { $limit: limit },
+        ],
+      },
+    },
+  ];
+  return await generalService.getRecordAggregate("User", aggregateArray);
+};
 
 /* ************************************************************************************** */
 /*                              fetch student record                                      */
@@ -17,8 +168,10 @@ const incrementalId = "studentId"; // id is auto incremented
 const getStudent = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
+  console.log(data);
   const user = req.user;
   let tableDataCondition = {};
+  let searchCondition = {};
 
   // Variables For Pagination
   let limit = parseInt(data.limit);
@@ -28,13 +181,17 @@ const getStudent = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  // Search with fullName and studentId
   if (data.name) {
-    tableDataCondition = {
+    searchCondition = {
       $expr: {
         $regexMatch: {
           input: {
-            $concat: ["$fullName", { $toString: "$studentId" }],
+            $concat: [
+              "$fullName",
+              "$branchName",
+              "$sectionName",
+              { $toString: "$studentId" },
+            ],
           },
           regex: `.*${data.name}.*`,
           options: "i",
@@ -45,14 +202,14 @@ const getStudent = catchAsync(async (req, res) => {
 
   // Search Filter With Status
   if (data.key === "status" && data.value && data.value !== "all") {
-    tableDataCondition["status"] = data.value;
+    searchCondition["status"] = data.value;
   }
 
   const Record = await fetchTableDataListAndCard(
     tableDataCondition,
     {},
     paginationCondition,
-    "student"
+    searchCondition
   );
 
   // Formatting Data For Pagination
@@ -102,11 +259,7 @@ const addStudent = catchAsync(async (req, res) => {
     const Record = await generalService.addRecord(TableName, data);
 
     // get student details (using common function from utils)
-    const StudentRecord = await getDetailsById(
-      Record._id,
-      Record.branchId,
-      Record.role
-    );
+    const StudentRecord = await getDetailsById(Record._id, Record.branchId);
     res.send({
       status: constant.SUCCESS,
       message: "Student added successfully",
@@ -129,11 +282,7 @@ const updateStudent = catchAsync(async (req, res) => {
     data
   );
 
-  const studentRecord = await getDetailsById(
-    Record._id,
-    Record.branchId,
-    Record.role
-  );
+  const studentRecord = await getDetailsById(Record._id, Record.branchId);
   res.send({
     status: constant.SUCCESS,
     message: "Student record updated successfully",
@@ -209,7 +358,7 @@ const getStudentDetailById = catchAsync(async (req, res) => {
   const { _id, branchId, role } = JSON.parse(req.params.query);
 
   if (_id && branchId && role) {
-    const TeacherRecord = await getDetailsById(_id, branchId, role);
+    const TeacherRecord = await getDetailsById(_id, branchId);
     res.send({
       status: constant.SUCCESS,
       message: "Student details fetch successfully",

@@ -35,6 +35,7 @@ exports.updateValidation = function (req, res, next) {
   let objectValidateScheme = joi.object().keys({
     _id: joi.string().required(),
     sectionId: joi.string().required(),
+    branchId: joi.string().required(),
     className: joi.string().required(),
   });
 

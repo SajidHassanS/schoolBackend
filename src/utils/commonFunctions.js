@@ -23,12 +23,11 @@ const autoIncrement = async (table, fieldName, condition = {}) => {
   }
 };
 
-const getDetailsById = async (_id, branchId, role) => {
+const getDetailsById = async (_id, branchId) => {
   const aggregateArray = [
     {
       $match: {
         _id: new mongoose.Types.ObjectId(_id),
-        role: role,
         status: {
           $ne: "delete",
         },
@@ -105,6 +104,9 @@ const getDetailsById = async (_id, branchId, role) => {
         _id: 1,
         teacherId: 1,
         branchId: 1,
+        staffId: 1,
+        studentId: 1,
+        admissionDate: 1,
         designation: 1,
         fullName: 1,
         email: 1,
@@ -175,7 +177,6 @@ const fetchTableDataListAndCard = async (
         ],
 
         tableData: [
-          // Condition For Table Data
           { $match: tableDataCondition },
           // lookup to get branch name by id
           {
@@ -247,6 +248,9 @@ const fetchTableDataListAndCard = async (
             $project: {
               _id: 1,
               fullName: 1,
+              teacherId: 1,
+              studentId: 1,
+              staffId: 1,
               email: 1,
               phoneNumber: 1,
               branchId: 1,
@@ -280,6 +284,7 @@ const fetchTableDataListAndCard = async (
   ];
   return await generalService.getRecordAggregate("User", aggregateArray);
 };
+
 module.exports = {
   autoIncrement,
   getDetailsById,

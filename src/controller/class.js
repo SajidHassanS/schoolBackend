@@ -10,18 +10,25 @@ const autoIncrementId = "classId"; // id is auto incremented
 /* ************************************************************************************** */
 /*                              fetch class list and cards          g                    */
 /* ************************************************************************************** */
-const fetchClassListAndCard = async (
+const fetchTableDataListAndCard = async (
   tableDataCondition,
   cardsCondition,
-  paginationCondition
+  paginationCondition,
+  searchCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
   let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
   const aggregateArray = [
     {
+      $match: {
+        status: {
+          $ne: "delete",
+        },
+      },
+    },
+    {
       $facet: {
         total: [{ $match: cardsCondition }, { $count: "total" }],
-
         // section cards details
         cards: [
           { $match: cardsCondition },
@@ -104,6 +111,9 @@ const fetchClassListAndCard = async (
           {
             $sort: { _id: -1 },
           },
+          {
+            $match: searchCondition,
+          },
           { $skip: skipPage },
           { $limit: limit },
         ],
@@ -119,10 +129,10 @@ const fetchClassListAndCard = async (
 const getClass = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
   // const data = req.body;
-  console.log(data);
   const userId = req.user._id;
   let tableDataCondition = {};
   let cardsCondition = {};
+  let searchCondition = {};
 
   // Variables For Pagination
   let limit = parseInt(data.limit);
@@ -137,11 +147,11 @@ const getClass = catchAsync(async (req, res) => {
 
   // search with branch name, class name and id (serial number)
   if (data.name) {
-    tableDataCondition = {
+    searchCondition = {
       $expr: {
         $regexMatch: {
           input: {
-            $concat: ["$branchName", "$className", { $toString: "$sNo" }],
+            $concat: ["$branchName", "$className", { $toString: "$classId" }],
           },
           regex: `.*${data.name}.*`,
           options: "i",
@@ -152,13 +162,14 @@ const getClass = catchAsync(async (req, res) => {
 
   // Search Filter With Status
   if (data.key === "status" && data.value && data.value !== "all") {
-    tableDataCondition["status"] = data.value;
+    searchCondition["status"] = data.value;
   }
 
-  const Record = await fetchClassListAndCard(
+  const Record = await fetchTableDataListAndCard(
     tableDataCondition,
     cardsCondition,
-    paginationCondition
+    paginationCondition,
+    searchCondition
   );
 
   // Formatting Data For Pagination
@@ -192,7 +203,6 @@ const addClass = catchAsync(async (req, res) => {
   const data = req.body;
   const user = req.user;
   const userId = user._id;
-  console.log(data);
   const isAlreadyExist = await generalService.getRecord("Class", {
     className: data.className,
     branchId: userId,
@@ -206,7 +216,12 @@ const addClass = catchAsync(async (req, res) => {
     data.createdBy = userId;
     data[autoIncrementId] = await autoIncrement(TableName, autoIncrementId);
     const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {}, {});
+    const RecordAll = await fetchTableDataListAndCard(
+      { _id: Record._id },
+      {},
+      {},
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Class added successfully",
@@ -225,7 +240,7 @@ const updateClass = catchAsync(async (req, res) => {
   data.updatedBy = userId;
   const isAlreadyExist = await generalService.getRecord("Class", {
     className: data.className,
-    branchId: userId,
+    branchId: data.branchId,
     sectionId: data.sectionId,
   });
   if (isAlreadyExist && isAlreadyExist.length > 0) {
@@ -240,7 +255,12 @@ const updateClass = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
-    const RecordAll = await fetchClassListAndCard({ _id: Record._id }, {}, {});
+    const RecordAll = await fetchTableDataListAndCard(
+      { _id: Record._id },
+      {},
+      {},
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Class record updated successfully",
@@ -253,21 +273,21 @@ const updateClass = catchAsync(async (req, res) => {
 /*                               update class status record                                       */
 /* ************************************************************************************** */
 const updateClassStatus = catchAsync(async (req, res) => {
-  const data = req.body;
+  const { _id, status } = req.body;
   const userId = req.user._id;
 
   let cardsCondition = {};
-  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
+  // cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
 
-  data.updatedAt = Date.now();
   const Record = await generalService.findAndModifyRecord(
     TableName,
-    { _id: data._id },
-    data
+    { _id: _id },
+    { status: status }
   );
-  const RecordAll = await fetchClassListAndCard(
+  const RecordAll = await fetchTableDataListAndCard(
     { _id: Record._id },
     cardsCondition,
+    {},
     {}
   );
 
@@ -281,18 +301,22 @@ const updateClassStatus = catchAsync(async (req, res) => {
 /*                               delete class record                                     */
 /* ************************************************************************************** */
 const deleteClass = catchAsync(async (req, res) => {
-  const data = req.body;
-  const Record = await generalService.deleteRecord(TableName, {
-    _id: data._id,
-  });
-  const RecordAll = await fetchClassListAndCard({}, {}, {});
+  const { _id } = req.body;
+  let cardsCondition = {};
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    {
+      _id: _id,
+    },
+    {
+      status: "delete",
+    }
+  );
+  const RecordAll = await fetchTableDataListAndCard({}, cardsCondition, {}, {});
   res.send({
     status: constant.SUCCESS,
     message: "Class deleted successfully",
-    Record: {
-      deletedRecordId: { _id: data._id },
-      cards: RecordAll[0].cards,
-    },
+    Record: RecordAll[0],
   });
 });
 

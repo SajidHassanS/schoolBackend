@@ -10,7 +10,8 @@ const incrementalId = "staffId"; // id is auto incremented
 const fetchTableDataListAndCard = async (
   tableDataCondition,
   cardsCondition,
-  paginationCondition
+  paginationCondition,
+  searchCondition
 ) => {
   let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
   let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
@@ -57,7 +58,6 @@ const fetchTableDataListAndCard = async (
         ],
 
         tableData: [
-          // Condition For Table Data
           { $match: tableDataCondition },
           // lookup to get branch name by id
           {
@@ -79,12 +79,58 @@ const fetchTableDataListAndCard = async (
               as: "branchInfo",
             },
           },
+
+          // lookup to get class name and class id
+          {
+            $lookup: {
+              from: "classes",
+              let: { classId: "$classId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", { $toObjectId: "$$classId" }] },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    className: 1,
+                  },
+                },
+              ],
+              as: "classInfo",
+            },
+          },
+
+          // lookup to get section name and section id
+
+          {
+            $lookup: {
+              from: "sections",
+              let: { sectionId: "$sectionId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ["$_id", { $toObjectId: "$$sectionId" }] },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    sectionName: 1,
+                  },
+                },
+              ],
+              as: "sectionInfo",
+            },
+          },
+
           {
             $project: {
               _id: 1,
               fullName: 1,
+              staffId: 1,
               email: 1,
-              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               phoneNumber: 1,
               branchId: 1,
               address: 1,
@@ -99,10 +145,19 @@ const fetchTableDataListAndCard = async (
               salaryInformation: 1,
               experienceInformation: 1,
               educationInformation: 1,
+              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
+              sectionName: { $arrayElemAt: ["$sectionInfo.sectionName", 0] },
+              sectionId: { $arrayElemAt: ["$sectionInfo._id", 0] },
+              className: { $arrayElemAt: ["$classInfo.className", 0] },
+              classId: { $arrayElemAt: ["$classInfo._id", 0] },
             },
           },
           {
             $sort: { _id: -1 },
+          },
+          // search from project
+          {
+            $match: searchCondition,
           },
           { $skip: skipPage },
           { $limit: limit },
@@ -121,6 +176,7 @@ const getStaff = catchAsync(async (req, res) => {
   // const data = req.body;
   const user = req.user;
   let tableDataCondition = {};
+  let searchCondition = {};
 
   // Variables For Pagination
   let limit = parseInt(data.limit);
@@ -132,11 +188,16 @@ const getStaff = catchAsync(async (req, res) => {
 
   // Search with fullName and studentId
   if (data.name) {
-    tableDataCondition = {
+    searchCondition = {
       $expr: {
         $regexMatch: {
           input: {
-            $concat: ["$fullName", { $toString: "$studentId" }],
+            $concat: [
+              "$fullName",
+              "$branchName",
+              "$role",
+              { $toString: "$staffId" },
+            ],
           },
           regex: `.*${data.name}.*`,
           options: "i",
@@ -147,14 +208,14 @@ const getStaff = catchAsync(async (req, res) => {
 
   // Search Filter With Status
   if (data.key === "status" && data.value && data.value !== "all") {
-    tableDataCondition["status"] = data.value;
+    searchCondition["status"] = data.value;
   }
 
   const Record = await fetchTableDataListAndCard(
     tableDataCondition,
     {},
     paginationCondition,
-    {}
+    searchCondition
   );
 
   // Formatting Data For Pagination
@@ -202,11 +263,7 @@ const addStaff = catchAsync(async (req, res) => {
     const Record = await generalService.addRecord(TableName, data);
 
     // get staff details along side with branch name (common function from utils)
-    const StaffRecord = await getDetailsById(
-      Record._id,
-      Record.branchId,
-      Record.role
-    );
+    const StaffRecord = await getDetailsById(Record._id, Record.branchId);
     res.send({
       status: constant.SUCCESS,
       message: "Staff added successfully",
@@ -220,37 +277,23 @@ const addStaff = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateStaff = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  const userId = user._id;
+  const userId = req.user._id;
   data.updatedBy = userId;
   data.updatedAt = Date.now();
-  const isAlreadyExist = await generalService.getRecord("User", {
-    email: data.email,
-  });
-  if (isAlreadyExist && isAlreadyExist.length > 0) {
-    res.send({
-      status: constant.ERROR,
-      message: "Email already exists",
-    });
-  } else {
-    const Record = await generalService.findAndModifyRecord(
-      TableName,
-      { _id: data._id },
-      data
-    );
 
-    // get staff details along side with branch name (common function from utils)
-    const staffRecord = await getDetailsById(
-      Record._id,
-      Record.branchId,
-      Record.role
-    );
-    res.send({
-      status: constant.SUCCESS,
-      message: "Staff record updated successfully",
-      Record: staffRecord[0],
-    });
-  }
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    { _id: data._id },
+    data
+  );
+
+  // get staff details along side with branch name (common function from utils)
+  const staffRecord = await getDetailsById(Record._id, Record.branchId);
+  res.send({
+    status: constant.SUCCESS,
+    message: "Staff record updated successfully",
+    Record: staffRecord[0],
+  });
 });
 
 /* ************************************************************************************** */
@@ -315,12 +358,19 @@ const deleteStaff = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const getStaffDetailById = catchAsync(async (req, res) => {
   const { _id, branchId } = JSON.parse(req.params.query);
-  const TeacherRecord = await getDetailsById(_id, branchId);
-  res.send({
-    status: constant.SUCCESS,
-    message: "Staff details fetch successfully",
-    Record: TeacherRecord[0],
-  });
+  if (_id && branchId) {
+    const StaffRecord = await getDetailsById(_id, branchId);
+    res.send({
+      status: constant.SUCCESS,
+      message: "Staff details fetch successfully",
+      Record: StaffRecord[0],
+    });
+  } else {
+    res.send({
+      status: constant.ERROR,
+      message: "Something went wrong while fetching staff details",
+    });
+  }
 });
 
 module.exports = {

@@ -189,6 +189,11 @@ router.put(
 
 //===================      staff Route         ==============//
 router.get("/getStaff/:query", authenticate, staffController.getStaff);
+router.get(
+  "/getStaffDetailById/:query",
+  authenticate,
+  staffController.getStaffDetailById
+);
 router.post(
   "/addStaff",
   staffJoi.addValidation,

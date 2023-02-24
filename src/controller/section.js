@@ -31,6 +31,51 @@ const fetchSectionList = async (condition) => {
   return await generalService.getRecordAggregate(TableName, aggregateArray);
 };
 
+const fetchTableDataListAndCard = async (
+  tableDataCondition,
+  paginationCondition,
+  searchCondition
+) => {
+  let limit = paginationCondition.limit || 10; // The Number Of Records Want To Fetch
+  let skipPage = paginationCondition.skipPage || 0; // The Number Of Page Want To Skip
+  const aggregateArray = [
+    {
+      $match: {
+        status: {
+          $ne: "delete",
+        },
+      },
+    },
+    {
+      $facet: {
+        total: [{ $match: cardsCondition }, { $count: "total" }],
+
+        tableData: [
+          // Condition For Table Data
+          { $match: tableDataCondition },
+
+          {
+            $project: {
+              sNo: 1,
+              sectionName: 1,
+              createdAt: 1,
+              createdBy: 1,
+            },
+          },
+          {
+            $sort: { _id: -1 },
+          },
+          {
+            $match: searchCondition,
+          },
+          { $skip: skipPage },
+          { $limit: limit },
+        ],
+      },
+    },
+  ];
+  return await generalService.getRecordAggregate(TableName, aggregateArray);
+};
 /* ************************************************************************************** */
 // Get Section Details and find and Modify conditions
 /* ************************************************************************************** */
@@ -68,12 +113,10 @@ const getSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const addSection = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  const userId = user._id;
+  const userId = req.user._id;
   data.createdBy = userId;
 
   data[incrementalSNo] = await autoIncrement(TableName, incrementalSNo);
-
   const isSectionAlreadyExist = await generalService.getRecord(TableName, {
     sectionName: data.sectionName,
   });

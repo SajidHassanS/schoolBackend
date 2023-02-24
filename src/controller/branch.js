@@ -298,7 +298,7 @@ const getBranchName = catchAsync(async (req, res) => {
     {
       $project: {
         _id: 1,
-        fullName: 1,
+        branchName: 1,
       },
     },
   ];

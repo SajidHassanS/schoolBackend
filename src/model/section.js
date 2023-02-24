@@ -3,8 +3,9 @@ const mongoose = require("mongoose");
 
 const Section = new mongoose.Schema(
   {
-    sNo: {
+    sectionId: {
       type: Number,
+      default: 0,
     },
     sectionName: {
       type: String,
