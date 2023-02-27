@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 
 const LeaveSetting = new mongoose.Schema(
   {
-    casualLeave: {
+    casualLeaves: {
       type: Number,
     },
-    medicalLeave: {
+    medicalLeaves: {
       type: Number,
     },
-    annualLeave: {
+    annualLeaves: {
       type: Number,
     },
     createdAt: {

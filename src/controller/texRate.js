@@ -12,14 +12,14 @@ const TableName = "TaxRate";
 const getTaxRate = catchAsync(async (req, res) => {
   // const data = JSON.parse(req.params.query);
   // const data = req.body;
-  const userId = "63edbcf9196e0c663f4b5ce3";
+  const userId = req.user._id;
   const Record = await generalService.getRecord(TableName, {
     createdBy: new mongoose.Types.ObjectId(userId),
   });
   res.send({
     status: constant.SUCCESS,
     message: "Tax record fetch successfully",
-    Record: Record[0],
+    Record,
   });
 });
 
@@ -44,13 +44,21 @@ const addTaxRate = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateTaxRate = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  const userId = user._id;
-  data.updatedAt = userId;
+  console.log(data);
+  return;
+  const userId = req.user._id;
+  data.updatedAt = Date.now();
+  data.updatedBy = userId;
 
-  const Record = await generalService.findAndModifyRecord(TableName, {
-    _id: data._id,
-  });
+  const Record = await generalService.findAndModifyRecord(
+    TableName,
+    {
+      _id: data._id,
+    },
+    {
+      data,
+    }
+  );
   res.send({
     status: constant.SUCCESS,
     message: "Tax record updated successfully",

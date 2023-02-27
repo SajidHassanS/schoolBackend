@@ -69,7 +69,7 @@ const fetchTableDataListAndCard = async (
                 },
                 {
                   $project: {
-                    fullName: 1,
+                    branchName: 1,
                   },
                 },
               ],
@@ -102,7 +102,7 @@ const fetchTableDataListAndCard = async (
             $project: {
               _id: 1,
               classId: 1,
-              branchName: { $arrayElemAt: ["$branchInfo.fullName", 0] },
+              branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               sectionName: { $arrayElemAt: ["$sectionInfo.sectionName", 0] },
               className: 1,
               status: 1,

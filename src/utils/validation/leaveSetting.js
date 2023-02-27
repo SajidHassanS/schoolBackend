@@ -4,9 +4,9 @@ exports.updateValidation = function (req, res, next) {
   const data = req.body;
   let objectValidateScheme = joi.object().keys({
     _id: joi.string().required(),
-    casualLeave: joi.number(),
-    medicalLeave: joi.number(),
-    annualLeave: joi.number(),
+    casualLeaves: joi.number(),
+    medicalLeaves: joi.number(),
+    annualLeaves: joi.number(),
   });
 
   try {
@@ -29,9 +29,9 @@ exports.updateValidation = function (req, res, next) {
 exports.addValidation = function (req, res, next) {
   const data = req.body;
   let objectValidateScheme = joi.object().keys({
-    casualLeave: joi.number(),
-    medicalLeave: joi.number(),
-    annualLeave: joi.number(),
+    casualLeaves: joi.number(),
+    medicalLeaves: joi.number(),
+    annualLeaves: joi.number(),
   });
 
   try {

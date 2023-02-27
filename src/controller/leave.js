@@ -10,10 +10,11 @@ const incrementalId = "leaveId"; // id is auto incremented
 /* ************************************************************************************** */
 // fetch leave cards and list
 /* ************************************************************************************** */
-const fetchLeaveListAndCard = async (
+const fetchTableData = async (
   tableDataCondition,
   cardsCondition,
-  paginationCondition
+  paginationCondition,
+  searchCondition
 ) => {
   let limit = paginationCondition.limit || 10;
   let skipPage = paginationCondition.skipPage || 0;
@@ -21,27 +22,6 @@ const fetchLeaveListAndCard = async (
     {
       $facet: {
         total: [{ $match: cardsCondition }, { $count: "total" }],
-        // leave cards data
-        cards: [
-          { $match: cardsCondition },
-          {
-            $group: {
-              _id: null,
-              studentNotices: {
-                $sum: { $cond: [{ $eq: ["$role", "student"] }, 1, 0] },
-              },
-              teacherNotices: {
-                $sum: { $cond: [{ $eq: ["$role", "teacher"] }, 1, 0] },
-              },
-              staffNotices: {
-                $sum: { $cond: [{ $eq: ["$role", "staff"] }, 1, 0] },
-              },
-              total: {
-                $sum: 1,
-              },
-            },
-          },
-        ],
         // fetching leave list
         tableData: [
           { $match: tableDataCondition },
@@ -84,6 +64,7 @@ const fetchLeaveListAndCard = async (
           {
             $sort: { _id: -1 },
           },
+          { $match: searchCondition },
           { $skip: skipPage },
           { $limit: limit },
         ],
@@ -98,9 +79,13 @@ const fetchLeaveListAndCard = async (
 /* ************************************************************************************** */
 const getLeave = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
-  const user = req.user;
+
   let tableDataCondition = {};
+  let searchCondition = {};
   let cardsCondition = {};
+
+  tableDataCondition.role = data.role;
+
   //variables for pagination
   let limit = parseInt(data.limit);
   let skipPage = limit * (parseInt(data.pageNumber) - 1);
@@ -109,30 +94,28 @@ const getLeave = catchAsync(async (req, res) => {
     skipPage: skipPage,
   };
 
-  tableDataCondition = {
-    createdBy: new mongoose.Types.ObjectId(user._id),
-  };
-  cardsCondition = {
-    createdBy: new mongoose.Types.ObjectId(user._id),
-  };
+  // tableDataCondition = {
+  //   createdBy: new mongoose.Types.ObjectId(user._id),
+  // };
 
   // search for status
   if (data.key === "status" && data.value && data.value !== "all") {
-    tableDataCondition["status"] = data.value;
+    searchCondition["status"] = data.value;
   }
- 
+
   // search in date filter
   if (data.startDate) {
     let startDate = new Date(new Date(data.startDate).setHours(00, 00, 00));
     let endDate = new Date(new Date(data.endDate).setHours(23, 59, 59));
-    tableDataCondition.createdAt = { $gte: startDate, $lt: endDate };
+    searchCondition.createdAt = { $gte: startDate, $lt: endDate };
   }
 
   // fetch cards and list of all noticeboard
-  const Record = await fetchLeaveListAndCard(
+  const Record = await fetchTableData(
     tableDataCondition,
     cardsCondition,
-    paginationCondition
+    paginationCondition,
+    searchCondition
   );
   // formatting data for pagination
   let dataObj = {};
@@ -163,27 +146,13 @@ const getLeave = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const addLeave = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  data.createdBy = user._id; // assigning user id to createdBy
+  data.createdBy = req.user._id; // assigning user id to createdBy
 
   // auto incrementalId
-  data[incrementalId] = await autoIncrement(
-    TableName,
-    incrementalId
-  );
-  let siteActivityObj = {
-    title: data.noticeTitle,
-    description: data.message,
-    createdBy: data.createdBy,
-    createdAt: data.createdAt,
-    NotificationType: data.role,
-  };
-  const siteActivityRecord = await generalService.addRecord(
-    "SiteActivity",
-    siteActivityObj
-  );
+  data[incrementalId] = await autoIncrement(TableName, incrementalId);
+
   const Record = await generalService.addRecord(TableName, data); // record added to database
-  const RecordAll = await fetchLeaveListAndCard({ _id: Record._id }, {}, {});
+  const RecordAll = await fetchTableData({ _id: Record._id }, {}, {}, {});
   res.send({
     status: constant.SUCCESS,
     message: "Leave added successfully",
@@ -194,14 +163,14 @@ const addLeave = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // edit leave record
 /* ************************************************************************************** */
-const editLeave= catchAsync(async (req, res) => {
+const updateLeave = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },
     data
   );
-  const RecordAll = await fetchLeaveListAndCard({ _id: Record._id }, {}, {});
+  const RecordAll = await fetchTableData({ _id: Record._id }, {}, {}, {});
   res.send({
     status: constant.SUCCESS,
     message: "Leave Record Updated Successfully",
@@ -212,12 +181,12 @@ const editLeave= catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 // delete leave record
 /* ************************************************************************************** */
-const deleteLeave= catchAsync(async (req, res) => {
+const deleteLeave = catchAsync(async (req, res) => {
   const data = req.body;
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
-  const RecordAll = await fetchLeaveListAndCard({}, {}, {});
+  const RecordAll = await fetchTableData({}, {}, {}, {});
 
   res.send({
     status: constant.SUCCESS,
@@ -232,6 +201,6 @@ const deleteLeave= catchAsync(async (req, res) => {
 module.exports = {
   getLeave,
   addLeave,
-  editLeave,
+  updateLeave,
   deleteLeave,
 };

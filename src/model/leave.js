@@ -14,6 +14,17 @@ const Leave = new mongoose.Schema(
     toDate: {
       type: Date,
     },
+    role: {
+      type: String,
+      enum: [
+        "superAdmin",
+        "principal",
+        "teacher",
+        "student",
+        "accountant",
+        "librarian",
+      ],
+    },
     noOfDays: {
       type: Number,
     },

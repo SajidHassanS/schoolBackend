@@ -28,6 +28,7 @@ const taxRateController = require("./controller/texRate");
 const sectionController = require("./controller/section");
 const noticeboardController = require("./controller/noticeBoard");
 const leaveSettingController = require("./controller/leaveSetting");
+const leaveController = require("./controller/leave");
 
 // ===================      joi validations    ==================//
 const authJoiValidation = require("./utils/validation/authJoiValidation");
@@ -220,14 +221,9 @@ router.put(
 );
 
 //===================      tax Rate Route         ==============//
-router.get("/getTaxRate/:query", taxRateController.getTaxRate);
+router.get("/getTaxRate/:query", authenticate, taxRateController.getTaxRate);
 router.post("/addTaxRate", authenticate, taxRateController.addTaxRate);
-router.put(
-  "/updateTaxRate",
-  authenticate,
-
-  taxRateController.updateTaxRate
-);
+router.put("/updateTaxRate", authenticate, taxRateController.updateTaxRate);
 router.put(
   "/deleteTaxRate",
   authenticate,
@@ -254,9 +250,14 @@ router.delete(
 );
 
 //===================      leave setting  route         ==============//
-router.get("/getLeaveSetting/:query", leaveSettingController.getLeaveSetting);
+router.get(
+  "/getLeaveSetting/:query",
+  authenticate,
+  leaveSettingController.getLeaveSetting
+);
 router.post(
   "/addLeaveSetting",
+  authenticate,
   leaveSettingJoi.addValidation,
   leaveSettingController.addLeaveSetting
 );
@@ -272,6 +273,12 @@ router.put(
   leaveSettingJoi.deleteValidation,
   leaveSettingController.deleteLeaveSetting
 );
+
+//===================      leave setting  route         ==============//
+router.get("/getLeave/:query", authenticate, leaveController.getLeave);
+router.post("/addLeaveSetting", authenticate, leaveController.addLeave);
+router.put("/updateLeave", authenticate, leaveController.updateLeave);
+router.put("/deleteLeave", authenticate, leaveController.deleteLeave);
 
 //===================      section  route         ==============//
 router.get("/getSection/:query", authenticate, sectionController.getSection);
