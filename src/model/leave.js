@@ -3,8 +3,9 @@ const mongoose = require("mongoose");
 var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const Leave = new mongoose.Schema(
   {
-    sNo: {
+    leaveId: {
       type: Number,
+      default: 0,
     },
     fromDate: {
       type: Date,

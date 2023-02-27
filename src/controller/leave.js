@@ -5,7 +5,7 @@ const { autoIncrement } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
 const TableName = "Leave";
-const incrementalId = "sNo"; // id is auto incremented
+const incrementalId = "leaveId"; // id is auto incremented
 
 /* ************************************************************************************** */
 // fetch leave cards and list
@@ -68,7 +68,7 @@ const fetchLeaveListAndCard = async (
           },
           {
             $project: {
-              sNo: 1,
+              leaveId: 1,
               fullName: { $arrayElemAt: ["$leaveCreatorInfo.fullName", 0] },
               createdByRole: {
                 $arrayElemAt: ["$leaveCreatorInfo.fullName", 0],
