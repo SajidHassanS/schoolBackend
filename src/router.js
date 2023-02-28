@@ -223,7 +223,12 @@ router.put(
 //===================      tax Rate Route         ==============//
 router.get("/getTaxRate/:query", authenticate, taxRateController.getTaxRate);
 router.post("/addTaxRate", authenticate, taxRateController.addTaxRate);
-router.put("/updateTaxRate", authenticate, taxRateController.updateTaxRate);
+router.put(
+  "/updateTaxRate",
+  authenticate,
+  // taxRateJoi.updateValidation,
+  taxRateController.updateTaxRate
+);
 router.put(
   "/deleteTaxRate",
   authenticate,

@@ -338,7 +338,6 @@ const deleteTeacher = catchAsync(async (req, res) => {
   const data = req.body;
   const userId = req.user._id;
   let cardsCondition = {};
-  cardsCondition.branchId = new mongoose.Types.ObjectId(userId);
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },

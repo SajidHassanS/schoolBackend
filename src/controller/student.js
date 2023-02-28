@@ -298,8 +298,6 @@ const updateStudentStatus = catchAsync(async (req, res) => {
   const userId = req.user._id;
 
   let cardsCondition = {};
-  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
-
   data.updatedAt = Date.now();
   data.updatedBy = userId;
   const Record = await generalService.findAndModifyRecord(
@@ -311,7 +309,7 @@ const updateStudentStatus = catchAsync(async (req, res) => {
     { _id: Record._id },
     cardsCondition,
     {},
-    "student"
+    {}
   );
 
   res.send({
@@ -328,7 +326,6 @@ const deleteStudent = catchAsync(async (req, res) => {
   const data = req.body;
   const userId = req.user._id;
   let cardsCondition = {};
-  cardsCondition.branchId = new mongoose.Types.ObjectId(userId);
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },
@@ -338,7 +335,7 @@ const deleteStudent = catchAsync(async (req, res) => {
     { _id: Record._id },
     cardsCondition,
     {},
-    "student"
+    {}
   );
   res.send({
     status: constant.SUCCESS,

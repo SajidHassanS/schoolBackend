@@ -315,6 +315,7 @@ const updateStaffStatus = catchAsync(async (req, res) => {
   const RecordAll = await fetchTableDataListAndCard(
     { _id: Record._id },
     cardsCondition,
+    {},
     {}
   );
 
@@ -340,6 +341,7 @@ const deleteStaff = catchAsync(async (req, res) => {
   const RecordAll = await fetchTableDataListAndCard(
     { _id: Record._id },
     cardsCondition,
+    {},
     {}
   );
   res.send({

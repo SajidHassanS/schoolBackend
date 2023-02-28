@@ -104,8 +104,8 @@ const getBranch = catchAsync(async (req, res) => {
   };
 
   // sending user id in cards and table data condition to get only related data
-  tableDataCondition.createdBy = new mongoose.Types.ObjectId(userId);
-  cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
+  // tableDataCondition.createdBy = new mongoose.Types.ObjectId(userId);
+  // cardsCondition.createdBy = new mongoose.Types.ObjectId(userId);
 
   // search with branch name and branch code
   if (data.name) {
