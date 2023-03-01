@@ -5,6 +5,7 @@ const NoticeBoard = new mongoose.Schema(
   {
     sNo: {
       type: Number,
+      default:1,
     },
     branchId: {
       type: mongoose.Schema.Types.ObjectId,

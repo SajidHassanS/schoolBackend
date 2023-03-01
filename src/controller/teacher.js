@@ -272,18 +272,17 @@ const addTeacher = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateTeacher = catchAsync(async (req, res) => {
   const data = req.body;
-  console.log(data);
   const userId = req.user._id;
   data.updatedBy = userId;
   data.updatedAt = Date.now();
 
   if (data.salaryInformation) {
     const totalSalary =
-      parseInt(salaryInformation.basicSalary) +
-      parseInt(salaryInformation.houseRentAllowance) +
-      parseInt(salaryInformation.conveyance) +
-      parseInt(salaryInformation.otherAllowance);
-    salaryInformation.totalSalary = totalSalary;
+      parseInt(data.salaryInformation.basicSalary) +
+      parseInt(data.salaryInformation.houseRentAllowance) +
+      parseInt(data.salaryInformation.conveyance) +
+      parseInt(data.salaryInformation.otherAllowance);
+    data.salaryInformation.totalSalary = totalSalary;
   }
   const Record = await generalService.findAndModifyRecord(
     TableName,

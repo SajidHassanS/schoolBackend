@@ -5,7 +5,7 @@ const Leave = new mongoose.Schema(
   {
     leaveId: {
       type: Number,
-      default: 0,
+      default: 1,
     },
     fromDate: {
       type: Date,

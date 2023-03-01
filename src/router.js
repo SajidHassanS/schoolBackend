@@ -101,7 +101,7 @@ router.get("/getClass/:query", authenticate, classController.getClass);
 router.get("/getClassName/:query", authenticate, classController.getClassName);
 router.post(
   "/addClass",
-  classJoi.addValidation,
+  // classJoi.addValidation,
   authenticate,
   classController.addClass
 );
@@ -292,12 +292,7 @@ router.get(
   authenticate,
   sectionController.getSectionName
 );
-router.post(
-  "/addSection",
-  authenticate,
-  sectionJoi.addValidation,
-  sectionController.addSection
-);
+router.post("/addSection", authenticate, sectionController.addSection);
 router.put(
   "/updateSection",
   authenticate,

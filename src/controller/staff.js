@@ -258,17 +258,24 @@ const addStaff = catchAsync(async (req, res) => {
       message: "Email already exists",
     });
   } else {
-    data.createdBy = userId;
-    data[incrementalId] = await autoIncrement(TableName, incrementalId);
-    const Record = await generalService.addRecord(TableName, data);
+    if (!data.role) {
+      res.send({
+        status: constant.ERROR,
+        message: "Staff role is required",
+      });
+    } else {
+      data.createdBy = userId;
+      data[incrementalId] = await autoIncrement(TableName, incrementalId);
+      const Record = await generalService.addRecord(TableName, data);
 
-    // get staff details along side with branch name (common function from utils)
-    const StaffRecord = await getDetailsById(Record._id, Record.branchId);
-    res.send({
-      status: constant.SUCCESS,
-      message: "Staff added successfully",
-      Record: StaffRecord[0],
-    });
+      // get staff details along side with branch name (common function from utils)
+      const StaffRecord = await getDetailsById(Record._id, Record.branchId);
+      res.send({
+        status: constant.SUCCESS,
+        message: "Staff added successfully",
+        Record: StaffRecord[0],
+      });
+    }
   }
 });
 

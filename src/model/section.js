@@ -5,7 +5,7 @@ const Section = new mongoose.Schema(
   {
     sectionId: {
       type: Number,
-      default: 0,
+      default: 1,
     },
     sectionName: {
       type: String,

@@ -11,10 +11,12 @@ const Class = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    sectionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Section",
-    },
+    sectionId: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Section",
+      },
+    ],
     className: {
       type: String,
     },

@@ -69,6 +69,7 @@ const fetchTableDataListAndCard = async (
                 },
                 {
                   $project: {
+                    _id: 1,
                     branchName: 1,
                   },
                 },
@@ -90,6 +91,7 @@ const fetchTableDataListAndCard = async (
                 },
                 {
                   $project: {
+                    _id: 1,
                     sectionName: 1,
                   },
                 },
@@ -103,6 +105,8 @@ const fetchTableDataListAndCard = async (
               _id: 1,
               classId: 1,
               branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
+              branchId: { $arrayElemAt: ["$branchInfo._id", 0] },
+              sectionId: { $arrayElemAt: ["$sectionInfo._id", 0] },
               sectionName: { $arrayElemAt: ["$sectionInfo.sectionName", 0] },
               className: 1,
               status: 1,
@@ -236,34 +240,42 @@ const addClass = catchAsync(async (req, res) => {
 const updateClass = catchAsync(async (req, res) => {
   const data = req.body;
   const userId = req.user._id;
-  data.updatedAt = Date.now();
-  data.updatedBy = userId;
-  const isAlreadyExist = await generalService.getRecord("Class", {
-    className: data.className,
-    branchId: data.branchId,
-    sectionId: data.sectionId,
-  });
-  if (isAlreadyExist && isAlreadyExist.length > 0) {
-    res.send({
-      status: constant.ERROR,
-      message: "Class name already exists",
-    });
-  } else {
+  if (data._id && data.branchId && data.sectionId && data.className) {
     data.updatedAt = Date.now();
-    const Record = await generalService.findAndModifyRecord(
-      TableName,
-      { _id: data._id },
-      data
-    );
-    const RecordAll = await fetchTableDataListAndCard(
-      { _id: Record._id },
-      {},
-      {},
-      {}
-    );
+    data.updatedBy = userId;
+    const isAlreadyExist = await generalService.getRecord("Class", {
+      className: data.className,
+      branchId: data.branchId,
+      sectionId: data.sectionId,
+    });
+    if (isAlreadyExist && isAlreadyExist.length > 0) {
+      res.send({
+        status: constant.ERROR,
+        message: "Class name already exists",
+      });
+    } else {
+      data.updatedAt = Date.now();
+      const Record = await generalService.findAndModifyRecord(
+        TableName,
+        { _id: data._id },
+        data
+      );
+      const RecordAll = await fetchTableDataListAndCard(
+        { _id: Record._id },
+        {},
+        {},
+        {}
+      );
+      res.send({
+        status: constant.SUCCESS,
+        message: "Class record updated successfully",
+        Record: RecordAll[0],
+      });
+    }
+  } else {
     res.send({
       status: constant.SUCCESS,
-      message: "Class record updated successfully",
+      message: "Something went wrong while updating the class record",
       Record: RecordAll[0],
     });
   }

@@ -59,6 +59,7 @@ const fetchNoticeBoardListAndCard = async (
                 },
                 {
                   $project: {
+                    _id: 1,
                     branchName: 1,
                   },
                 },
@@ -93,6 +94,7 @@ const fetchNoticeBoardListAndCard = async (
               sNo: 1,
               fullName: { $arrayElemAt: ["$noticeCreatorInfo.fullName", 0] },
               branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
+              branchId: { $arrayElemAt: ["$branchInfo._id", 0] },
               createdByRole: {
                 $arrayElemAt: ["$noticeCreatorInfo.fullName", 0],
               },
@@ -123,19 +125,19 @@ const getNoticeboard = catchAsync(async (req, res) => {
   const user = req.user;
   let tableDataCondition = {};
   let cardsCondition = {};
-  //variables for pagination
-  let limit = parseInt(data.limit);
-  let skipPage = limit * (parseInt(data.pageNumber) - 1);
-  let paginationCondition = {
-    limit: limit,
-    skipPage: skipPage,
-  };
 
   tableDataCondition = {
     createdBy: new mongoose.Types.ObjectId(user._id),
   };
   cardsCondition = {
     createdBy: new mongoose.Types.ObjectId(user._id),
+  };
+  //variables for pagination
+  let limit = parseInt(data.limit);
+  let skipPage = limit * (parseInt(data.pageNumber) - 1);
+  let paginationCondition = {
+    limit: limit,
+    skipPage: skipPage,
   };
 
   // search for status
@@ -188,8 +190,7 @@ const getNoticeboard = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const addNoticeboard = catchAsync(async (req, res) => {
   const data = req.body;
-  const user = req.user;
-  data.createdBy = user._id; // assigning user id to createdBy
+  data.createdBy = req.user._id; // assigning user id to createdBy
 
   // auto incrementalNoticeBoardId
   data[incrementalNoticeBoardId] = await autoIncrement(
@@ -250,15 +251,21 @@ const updateNoticeBoard = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const deleteNoticeboard = catchAsync(async (req, res) => {
   const data = req.body;
+
+  let cardsCondition = {};
+  cardsCondition = {
+    createdBy: req.user._id,
+  };
+
   const Record = await generalService.deleteRecord(TableName, {
     _id: data._id,
   });
+  const AllRecord = await fetchNoticeBoardListAndCard({}, cardsCondition, {});
+  AllRecord[0].tableData = [{ _id: data._id }];
   res.send({
     status: constant.SUCCESS,
     message: "Noticeboard record deleted successfully",
-    Record: {
-      tableData: [{ _id: data._id }],
-    },
+    Record: AllRecord[0],
   });
 });
 
