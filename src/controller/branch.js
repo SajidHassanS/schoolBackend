@@ -60,6 +60,7 @@ const fetchBranchListAndCard = async (
           {
             $project: {
               _id: 1,
+              principalId: 1,
               fullName: 1,
               branchCode: 1,
               sNo: 1,

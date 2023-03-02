@@ -122,6 +122,7 @@ const fetchNoticeBoardListAndCard = async (
 /* ************************************************************************************** */
 const getNoticeboard = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
+  console.log(data);
   const user = req.user;
   let tableDataCondition = {};
   let cardsCondition = {};
@@ -197,17 +198,7 @@ const addNoticeboard = catchAsync(async (req, res) => {
     TableName,
     incrementalNoticeBoardId
   );
-  let siteActivityObj = {
-    title: data.noticeTitle,
-    description: data.message,
-    createdBy: data.createdBy,
-    createdAt: data.createdAt,
-    NotificationType: data.role,
-  };
-  const siteActivityRecord = await generalService.addRecord(
-    "SiteActivity",
-    siteActivityObj
-  );
+
   const Record = await generalService.addRecord(TableName, data); // record added to database
   const RecordAll = await fetchNoticeBoardListAndCard(
     { _id: Record._id },
