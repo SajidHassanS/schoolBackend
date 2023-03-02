@@ -20,6 +20,10 @@ const User = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    principalId: {
+      type: Number,
+      default: 0,
+    },
     staffId: {
       type: Number,
       default: 0,

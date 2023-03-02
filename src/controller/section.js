@@ -4,7 +4,7 @@ const constant = require("../utils/constant"),
 const catchAsync = require("../utils/catchAsync");
 const mongoose = require("mongoose");
 const { autoIncrement } = require("../utils/commonFunctions");
-const incrementalSNo = "sNo"; // id is auto incremented
+const incrementalId = "sectionId"; // id is auto incremented
 
 const TableName = "Section";
 
@@ -33,6 +33,7 @@ const fetchSectionList = async (condition) => {
 
 const fetchTableDataListAndCard = async (
   tableDataCondition,
+  cardsCondition,
   paginationCondition,
   searchCondition
 ) => {
@@ -56,7 +57,8 @@ const fetchTableDataListAndCard = async (
 
           {
             $project: {
-              sNo: 1,
+              _id: 1,
+              sectionId: 1,
               sectionName: 1,
               createdAt: 1,
               createdBy: 1,
@@ -80,11 +82,21 @@ const fetchTableDataListAndCard = async (
 // Get Section Details and find and Modify conditions
 /* ************************************************************************************** */
 const getSection = catchAsync(async (req, res) => {
-  const data = req.body;
-  let condition = {};
+  const data = JSON.parse(req.params.query);
+  // Variables For Pagination
+  let limit = parseInt(data.limit);
+  let skipPage = limit * (parseInt(data.pageNumber) - 1);
+  let paginationCondition = {
+    limit: limit,
+    skipPage: skipPage,
+  };
+
+  let tableDataCondition = {};
+  let cardsCondition = {};
+  let searchCondition = {};
 
   if (data.name) {
-    condition = {
+    searchCondition = {
       $expr: {
         $regexMatch: {
           input: {
@@ -97,14 +109,36 @@ const getSection = catchAsync(async (req, res) => {
     };
   }
   if (data.key === "status" && data.value !== "all" && data.value !== "") {
-    condition.status = data.value;
+    searchCondition.status = data.value;
   }
 
-  const Record = await fetchSectionList(condition);
+  const Record = await fetchTableDataListAndCard(
+    tableDataCondition,
+    cardsCondition,
+    paginationCondition,
+    searchCondition
+  );
+  // Formatting Data For Pagination
+  let dataObj = {};
+  const tableDataRecord = Record[0].tableData;
+  if (tableDataRecord && tableDataRecord.length > 0) {
+    let metaData = Record[0].total;
+    dataObj = {
+      page: parseInt(parseInt(metaData[0].total) / limit),
+    };
+  }
+  Record[0].page = dataObj.page;
+  // Check if variable Total in record has no length then assign 0
+  if (Record[0].total.length == 0) {
+    Record[0].total[0] = {
+      total: 0,
+    };
+  }
+  Record[0].total = Record[0].total[0].total;
   res.send({
     status: constant.SUCCESS,
     message: "Section  record fetch successfully",
-    Record,
+    Record: Record[0],
   });
 });
 
@@ -114,9 +148,13 @@ const getSection = catchAsync(async (req, res) => {
 const addSection = catchAsync(async (req, res) => {
   const data = req.body;
   const userId = req.user._id;
+
+  let tableDataCondition = {};
+  let cardsCondition = {};
+
   data.createdBy = userId;
 
-  data[incrementalSNo] = await autoIncrement(TableName, incrementalSNo);
+  data[incrementalId] = await autoIncrement(TableName, incrementalId);
   const isSectionAlreadyExist = await generalService.getRecord(TableName, {
     sectionName: data.sectionName,
   });
@@ -128,10 +166,16 @@ const addSection = catchAsync(async (req, res) => {
     });
   } else {
     const Record = await generalService.addRecord(TableName, data);
+    const RecordAll = await fetchTableDataListAndCard(
+      tableDataCondition,
+      cardsCondition,
+      {},
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
       message: "Section added successfully",
-      Record,
+      Record: RecordAll[0],
     });
   }
 });
@@ -141,7 +185,7 @@ const addSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateSection = catchAsync(async (req, res) => {
   const data = req.body;
-  //console.log("============data", data);
+
   //const user = req.user;
 
   const isSectionAlreadyExist = await generalService.getRecord(TableName, {
@@ -159,10 +203,16 @@ const updateSection = catchAsync(async (req, res) => {
       { _id: data._id },
       data
     );
+    const RecordAll = await fetchTableDataListAndCard(
+      { _id: data._id },
+      cardsCondition,
+      {},
+      {}
+    );
     res.send({
       status: constant.SUCCESS,
-      message: "Section record updated successfully",
-      Record,
+      message: "Section added successfully",
+      Record: RecordAll[0],
     });
   }
 });

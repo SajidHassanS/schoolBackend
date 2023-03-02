@@ -82,17 +82,20 @@ const fetchTableDataListAndCard = async (
           {
             $lookup: {
               from: "sections",
-              let: { sectionId: "$sectionId" },
+              let: { sectionIdArray: "$sectionId" },
               pipeline: [
                 {
                   $match: {
-                    $expr: { $eq: ["$_id", "$$sectionId"] },
+                    $expr: {
+                      $in: ["$_id", "$$sectionIdArray"],
+                    },
                   },
                 },
                 {
                   $project: {
                     _id: 1,
                     sectionName: 1,
+                    sectionId: 1,
                   },
                 },
               ],
@@ -106,8 +109,7 @@ const fetchTableDataListAndCard = async (
               classId: 1,
               branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               branchId: { $arrayElemAt: ["$branchInfo._id", 0] },
-              sectionId: { $arrayElemAt: ["$sectionInfo._id", 0] },
-              sectionName: { $arrayElemAt: ["$sectionInfo.sectionName", 0] },
+              sectionInfo: 1,
               className: 1,
               status: 1,
             },
@@ -328,7 +330,11 @@ const deleteClass = catchAsync(async (req, res) => {
   res.send({
     status: constant.SUCCESS,
     message: "Class deleted successfully",
-    Record: RecordAll[0],
+    Record: {
+      tableData: [{ _id: _id }],
+      cards: RecordAll[0].cards,
+      total: RecordAll[0].total,
+    },
   });
 });
 

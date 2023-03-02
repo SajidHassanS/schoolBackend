@@ -5,7 +5,7 @@ const { autoIncrement } = require("../utils/commonFunctions");
 const mongoose = require("mongoose");
 
 const TableName = "User";
-const incrementId = "sNo"; // id is auto incremented
+const incrementId = "principalId"; // id is auto incremented
 
 /* ************************************************************************************** */
 /*                              fetch branch list and cards          g                    */
