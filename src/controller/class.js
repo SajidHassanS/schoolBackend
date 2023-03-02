@@ -106,6 +106,7 @@ const fetchTableDataListAndCard = async (
           {
             $project: {
               _id: 1,
+              sectionId: 1,
               classId: 1,
               branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               branchId: { $arrayElemAt: ["$branchInfo._id", 0] },

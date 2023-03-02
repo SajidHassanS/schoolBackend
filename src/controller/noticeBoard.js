@@ -122,7 +122,6 @@ const fetchNoticeBoardListAndCard = async (
 /* ************************************************************************************** */
 const getNoticeboard = catchAsync(async (req, res) => {
   const data = JSON.parse(req.params.query);
-  console.log(data);
   const user = req.user;
   let tableDataCondition = {};
   let cardsCondition = {};
