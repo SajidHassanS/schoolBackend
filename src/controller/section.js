@@ -12,25 +12,6 @@ const TableName = "Section";
 // Fetch all Section list
 /* ************************************************************************************** */
 
-const fetchSectionList = async (condition) => {
-  const aggregateArray = [
-    { $match: condition },
-    {
-      $project: {
-        sNo: 1,
-        sectionName: 1,
-        createdAt: 1,
-        createdBy: 1,
-      },
-    },
-    {
-      $sort: { _id: -1 },
-    },
-  ];
-
-  return await generalService.getRecordAggregate(TableName, aggregateArray);
-};
-
 const fetchTableDataListAndCard = async (
   tableDataCondition,
   cardsCondition,
@@ -153,7 +134,7 @@ const addSection = catchAsync(async (req, res) => {
   let cardsCondition = {};
 
   data.createdBy = userId;
-
+  data.status = "active";
   data[incrementalId] = await autoIncrement(TableName, incrementalId);
   const isSectionAlreadyExist = await generalService.getRecord(TableName, {
     sectionName: data.sectionName,
@@ -185,7 +166,7 @@ const addSection = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const updateSection = catchAsync(async (req, res) => {
   const data = req.body;
-
+  let cardsCondition = {};
   //const user = req.user;
 
   const isSectionAlreadyExist = await generalService.getRecord(TableName, {
@@ -204,7 +185,7 @@ const updateSection = catchAsync(async (req, res) => {
       data
     );
     const RecordAll = await fetchTableDataListAndCard(
-      { _id: data._id },
+      {},
       cardsCondition,
       {},
       {}
@@ -221,17 +202,57 @@ const updateSection = catchAsync(async (req, res) => {
 // Delete Record and search conditions
 /* ************************************************************************************** */
 const deleteSection = catchAsync(async (req, res) => {
-  const data = req.body;
-  const Record = await generalService.deleteRecord(TableName, {
-    _id: data._id,
-  });
-  res.send({
-    status: constant.SUCCESS,
-    message: "Record deleted successfully",
-    Record,
-  });
+  const { _id } = req.body;
+  let cardsCondition = {};
+  const aggregateArray = [
+    {
+      $match: {
+        $expr: {
+          $in: [{ $toObjectId: _id }, "$sectionId"],
+        },
+      },
+    },
+  ];
+  const isSectionEnrolled = await generalService.getRecordAggregate(
+    "Class",
+    aggregateArray
+  );
+  if (isSectionEnrolled && isSectionEnrolled.length > 0) {
+    res.send({
+      status: constant.ERROR,
+      message: "Section is used in class so cannot be deleted",
+    });
+  } else {
+    const Record = await generalService.findAndModifyRecord(
+      TableName,
+      {
+        _id: _id,
+      },
+      {
+        status: "delete",
+      }
+    );
+    const RecordAll = await fetchTableDataListAndCard(
+      {},
+      cardsCondition,
+      {},
+      {}
+    );
+    res.send({
+      status: constant.SUCCESS,
+      message: "Section deleted successfully",
+      Record: {
+        tableData: [{ _id: _id }],
+        cards: RecordAll[0].cards,
+        total: RecordAll[0].total,
+      },
+    });
+  }
 });
 
+/* ************************************************************************************** */
+// get section name
+/* ************************************************************************************** */
 const getSectionName = catchAsync(async (req, res) => {
   const aggregateArray = [
     {

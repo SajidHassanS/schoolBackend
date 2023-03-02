@@ -301,7 +301,7 @@ router.put(
 );
 router.put(
   "/deleteSection",
-  authenticate,
+
   sectionJoi.deleteValidation,
   sectionController.deleteSection
 );

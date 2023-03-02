@@ -15,6 +15,11 @@ const Section = new mongoose.Schema(
       type: Date,
       default: Date.now(),
     },
+    status: {
+      type: String,
+      enum: ["active", "delete"],
+      default: "active",
+    },
     updatedAt: {
       type: Date,
     },

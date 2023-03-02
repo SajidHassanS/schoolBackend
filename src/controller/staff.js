@@ -287,7 +287,14 @@ const updateStaff = catchAsync(async (req, res) => {
   const userId = req.user._id;
   data.updatedBy = userId;
   data.updatedAt = Date.now();
-
+if (data.salaryInformation) {
+  const totalSalary =
+    parseInt(data.salaryInformation.basicSalary) +
+    parseInt(data.salaryInformation.houseRentAllowance) +
+    parseInt(data.salaryInformation.conveyance) +
+    parseInt(data.salaryInformation.otherAllowance);
+  data.salaryInformation.totalSalary = totalSalary;
+}
   const Record = await generalService.findAndModifyRecord(
     TableName,
     { _id: data._id },
