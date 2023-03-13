@@ -78,6 +78,64 @@ const fetchTableDataListAndCard = async (
             },
           },
 
+          // lookup to get branch name by id
+          {
+            $lookup: {
+              from: "users",
+              let: {
+                branchId: "$branchId",
+                sectionIdArray: "$sectionId",
+                sectionId: "$_id",
+              },
+              pipeline: [
+                {
+                  $lookup: {
+                    from: "sections",
+                    let: { sectionIdArray: "$sectionIdArray" },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $in: ["$_id", "$$sectionIdArray"],
+                          },
+                        },
+                      },
+                      {
+                        $project: {
+                          _id: 1,
+                          sectionName: 1,
+                          sectionId: 1,
+                        },
+                      },
+                    ],
+                    as: "sectionInfo",
+                  },
+                },
+
+                {
+                  $match: {
+                    role: "student",
+                    $expr: { $eq: ["$branchId", "$$branchId"] },
+                    $expr: { $eq: ["$sectionId", "$$sectionId"] },
+                    // $expr: {
+                    //   $in: ["$sectionId", "$$sectionIdArray"],
+                    // },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    sectionInfo: 1,
+                  },
+                },
+                {
+                  $count: "total",
+                },
+              ],
+              as: "TotalStrength",
+            },
+          },
+
           // lookup to get section name by id
           {
             $lookup: {
@@ -113,6 +171,7 @@ const fetchTableDataListAndCard = async (
               sectionInfo: 1,
               className: 1,
               status: 1,
+              TotalStrength: 1,
             },
           },
           {
@@ -134,9 +193,9 @@ const fetchTableDataListAndCard = async (
 /*                              fetch class record                                       */
 /* ************************************************************************************** */
 const getClass = catchAsync(async (req, res) => {
-  const data = JSON.parse(req.params.query);
-  // const data = req.body;
-  const userId = req.user._id;
+  //const data = JSON.parse(req.params.query);
+  const data = req.body;
+  // const userId = req.user._id;
   let tableDataCondition = {};
   let cardsCondition = {};
   let searchCondition = {};
@@ -208,6 +267,7 @@ const getClass = catchAsync(async (req, res) => {
 /* ************************************************************************************** */
 const addClass = catchAsync(async (req, res) => {
   const data = req.body;
+  console.log(data);
   const user = req.user;
   const userId = user._id;
   const isAlreadyExist = await generalService.getRecord("Class", {
@@ -220,20 +280,27 @@ const addClass = catchAsync(async (req, res) => {
       message: "Class name already exists",
     });
   } else {
-    data.createdBy = userId;
-    data[autoIncrementId] = await autoIncrement(TableName, autoIncrementId);
-    const Record = await generalService.addRecord(TableName, data);
-    const RecordAll = await fetchTableDataListAndCard(
-      { _id: Record._id },
-      {},
-      {},
-      {}
-    );
-    res.send({
-      status: constant.SUCCESS,
-      message: "Class added successfully",
-      Record: RecordAll[0],
-    });
+    if (data.branchId) {
+      data.createdBy = userId;
+      data[autoIncrementId] = await autoIncrement(TableName, autoIncrementId);
+      const Record = await generalService.addRecord(TableName, data);
+      const RecordAll = await fetchTableDataListAndCard(
+        { _id: Record._id },
+        {},
+        {},
+        {}
+      );
+      res.send({
+        status: constant.SUCCESS,
+        message: "Class added successfully",
+        Record: RecordAll[0],
+      });
+    } else {
+      res.send({
+        status: constant.ERROR,
+        message: "Class branchId is required",
+      });
+    }
   }
 });
 

@@ -43,16 +43,25 @@ const signIn = catchAsync(async (req, res, next) => {
 
       console.log("====== role =====", user.role, process.env.SUPER_ADMIN_URL);
 
-      // if (
-      //   user.role === "superAdmin" &&
-      //   req.headers.origin !== process.env.SUPER_ADMIN_URL
-      // ) {
-      //   res.status(400).send({
-      //     status: constant.ERROR,
-      //     message: "Incorrect username or password",
-      //   });
-      //   return;
-      // }
+      if (
+        user.role === "superAdmin" &&
+        req.headers.origin !== process.env.SUPER_ADMIN_URL
+      ) {
+        res.status(400).send({
+          status: constant.ERROR,
+          message: "Incorrect username or password",
+        });
+        return;
+      } else if (
+        user.role === "principal" &&
+        req.headers.origin !== process.env.PRINCIPAL_URL
+      ) {
+        res.status(400).send({
+          status: constant.ERROR,
+          message: "Incorrect username or password",
+        });
+        return;
+      }
 
       if (user.status === "active") {
         let token = await user.generateAuthToken();
