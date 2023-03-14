@@ -78,8 +78,7 @@ const fetchTableDataListAndCard = async (
             },
           },
 
-          // lookup to get section name by id and total student in section
-
+          // lookup to get section name by id and student in a section
           {
             $lookup: {
               from: "users",
@@ -162,11 +161,40 @@ const fetchTableDataListAndCard = async (
             },
           },
 
+          // lookup to get total student of a class
+          {
+            $lookup: {
+              from: "users",
+              let: {
+                branchId: "$branchId",
+                classId: "$_id",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    role: "student",
+                    $expr: {
+                      $eq: ["$branchId", "$$branchId"],
+                      $eq: ["$classId", "$$classId"],
+                    },
+                  },
+                },
+
+                {
+                  $count: "total",
+                },
+              ],
+              as: "classStrength",
+            },
+          },
+
           {
             $project: {
               _id: 1,
               sectionId: 1,
+              classTotalStrength: 1,
               classId: 1,
+              classStrength: { $arrayElemAt: ["$classStrength.total", 0] },
               branchName: { $arrayElemAt: ["$branchInfo.branchName", 0] },
               branchId: { $arrayElemAt: ["$branchInfo._id", 0] },
               sectionInfo: 1,
