@@ -78,25 +78,25 @@ const fetchTableDataListAndCard = async (
             },
           },
 
-          // lookup to get branch name by id
+          // lookup to get section name by id and total student in section
+
           {
             $lookup: {
               from: "users",
               let: {
                 branchId: "$branchId",
-                sectionIdArray: "$sectionId",
-                sectionId: "$_id",
+                classId: "$_id",
               },
               pipeline: [
                 {
                   $lookup: {
                     from: "sections",
-                    let: { sectionIdArray: "$sectionIdArray" },
+                    let: { sectionId: "$sectionId" },
                     pipeline: [
                       {
                         $match: {
                           $expr: {
-                            $in: ["$_id", "$$sectionIdArray"],
+                            $eq: ["$_id", "$$sectionId"],
                           },
                         },
                       },
@@ -111,49 +111,50 @@ const fetchTableDataListAndCard = async (
                     as: "sectionInfo",
                   },
                 },
-
                 {
                   $match: {
                     role: "student",
-                    $expr: { $eq: ["$branchId", "$$branchId"] },
-                    $expr: { $eq: ["$sectionId", "$$sectionId"] },
-                    // $expr: {
-                    //   $in: ["$sectionId", "$$sectionIdArray"],
-                    // },
-                  },
-                },
-                {
-                  $project: {
-                    _id: 1,
-                    sectionInfo: 1,
-                  },
-                },
-                {
-                  $count: "total",
-                },
-              ],
-              as: "TotalStrength",
-            },
-          },
-
-          // lookup to get section name by id
-          {
-            $lookup: {
-              from: "sections",
-              let: { sectionIdArray: "$sectionId" },
-              pipeline: [
-                {
-                  $match: {
                     $expr: {
-                      $in: ["$_id", "$$sectionIdArray"],
+                      $eq: ["$branchId", "$$branchId"],
+                      $eq: ["$classId", "$$classId"],
                     },
                   },
                 },
                 {
                   $project: {
                     _id: 1,
-                    sectionName: 1,
-                    sectionId: 1,
+                    fullName: 1,
+                    sId: {
+                      $arrayElemAt: ["$sectionInfo._id", 0],
+                    },
+                    sectionId: {
+                      $arrayElemAt: ["$sectionInfo.sectionId", 0],
+                    },
+                    sectionName: {
+                      $arrayElemAt: ["$sectionInfo.sectionName", 0],
+                    },
+                  },
+                },
+                {
+                  $group: {
+                    _id: "$sId",
+                    sectionName: {
+                      $push: "$sectionName",
+                    },
+                    sectionId: {
+                      $push: "$sectionId",
+                    },
+                    totalStudent: {
+                      $sum: 1,
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    sectionName: { $arrayElemAt: ["$sectionName", 0] },
+                    sectionId: { $arrayElemAt: ["$sectionId", 0] },
+                    totalStudent: 1,
                   },
                 },
               ],
@@ -171,7 +172,6 @@ const fetchTableDataListAndCard = async (
               sectionInfo: 1,
               className: 1,
               status: 1,
-              TotalStrength: 1,
             },
           },
           {
@@ -346,7 +346,6 @@ const updateClass = catchAsync(async (req, res) => {
     res.send({
       status: constant.SUCCESS,
       message: "Something went wrong while updating the class record",
-      Record: RecordAll[0],
     });
   }
 });
